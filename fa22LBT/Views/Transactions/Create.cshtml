@@ -1,0 +1,65 @@
+@model fa22LBT.Models.Transaction
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>Transaction</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="TransactionNumber" class="control-label"></label>
+                <input asp-for="TransactionNumber" class="form-control" />
+                <span asp-validation-for="TransactionNumber" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TransactionType" class="control-label"></label>
+                <select asp-for="TransactionType" class="form-control"></select>
+                <span asp-validation-for="TransactionType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TransactionAmount" class="control-label"></label>
+                <input asp-for="TransactionAmount" class="form-control" />
+                <span asp-validation-for="TransactionAmount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="OrderDate" class="control-label"></label>
+                <input asp-for="OrderDate" class="form-control" />
+                <span asp-validation-for="OrderDate" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="TransactionApproved" /> @Html.DisplayNameFor(model => model.TransactionApproved)
+                </label>
+            </div>
+            <div class="form-group">
+                <label asp-for="TransactionComments" class="control-label"></label>
+                <input asp-for="TransactionComments" class="form-control" />
+                <span asp-validation-for="TransactionComments" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ToAccount" class="control-label"></label>
+                <input asp-for="ToAccount" class="form-control" />
+                <span asp-validation-for="ToAccount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FromAccount" class="control-label"></label>
+                <input asp-for="FromAccount" class="form-control" />
+                <span asp-validation-for="FromAccount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
