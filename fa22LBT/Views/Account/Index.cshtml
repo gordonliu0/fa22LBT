@@ -1,12 +1,11 @@
 ﻿@model IndexViewModel
 @{
-    ViewBag.Title = "Change Password";
+    ViewBag.Title = "View Account Information";
 }
 
-<h2>@ViewBag.Title.</h2>
+<h2>@ViewBag.Title</h2>
 
 <div>
-    <h4>Change your account settings</h4>
     <hr />
     <dl class="dl-horizontal">
         <dt>User Name:</dt>
@@ -15,9 +14,23 @@
         <dt>Email:</dt>
         <dd>@Model.Email</dd>
 
+        <dt>Full Name:</dt>
+        <dd>@Model.FullName</dd>
+
+        <dt>Full Address:</dt>
+        <dd>@Model.FullAddress</dd>
+
+        <dt>Phone Number:</dt>
+        <dd>@Model.PhoneNumber</dd>
+
         <dt>Password:</dt>
         <dd>
-            [@Html.ActionLink("Change your password", "ChangePassword")]
+            @Html.ActionLink("Change your password", "ChangePassword")
+        </dd>
+
+        <dt>Want to change your info?</dt>
+        <dd>
+            <a asp-action="Edit" asp-route-id="@Model.Email">Edit</a>
         </dd>
     </dl>
 </div>

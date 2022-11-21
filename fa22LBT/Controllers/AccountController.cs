@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using fa22LBT.DAL;
 using fa22LBT.Models;
 using fa22LBT.Utilities;
+using Microsoft.EntityFrameworkCore;
 
 namespace fa22LBT.Controllers
 {
@@ -63,8 +64,7 @@ namespace fa22LBT.Controllers
                 State = rvm.State,
                 ZipCode = rvm.ZipCode,
                 DOB = rvm.DOB,
-                IsActive = rvm.IsActive,
-                SSN = rvm.SSN
+                IsActive = rvm.IsActive
             };
 
             //create AddUserModel
@@ -161,9 +161,75 @@ namespace fa22LBT.Controllers
             ivm.HasPassword = true;
             ivm.UserID = user.Id;
             ivm.UserName = user.UserName;
+            ivm.PhoneNumber = user.PhoneNumber;
+            ivm.FullName = user.FullName;
+            ivm.FullAddress = user.FullAddress;
 
             //send data to the view
             return View(ivm);
+        }
+
+        public async Task<ActionResult> Edit(string id)
+        {
+            var UserAccount = await _userManager.FindByEmailAsync(id);
+            var euvm = new EditUserViewModel();
+            euvm.Email = id;
+            euvm.FirstName = UserAccount.FirstName;
+            euvm.MiddleInitial = UserAccount.MiddleInitial;
+            euvm.LastName = UserAccount.LastName;
+            euvm.Address = UserAccount.Address;
+            euvm.City = UserAccount.City;
+            euvm.State = UserAccount.State;
+            euvm.ZipCode = UserAccount.ZipCode;
+            euvm.PhoneNumber = UserAccount.PhoneNumber;
+
+            if (euvm == null)
+            {
+                return NotFound();
+            }
+
+            return View(euvm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Edit(EditUserViewModel euvm, string email)
+        {
+            //if user forgot a field, send them back to 
+            //change password page to try again
+            if (ModelState.IsValid == false)
+            {
+                return View(euvm);
+            }
+
+            if (email != euvm.Email)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    AppUser userLoggedIn = await _userManager.FindByEmailAsync(email);
+                    userLoggedIn.FirstName = euvm.FirstName;
+                    userLoggedIn.MiddleInitial = euvm.MiddleInitial;
+                    userLoggedIn.LastName = euvm.LastName;
+                    userLoggedIn.Address = euvm.Address;
+                    userLoggedIn.City = euvm.City;
+                    userLoggedIn.State = euvm.State;
+                    userLoggedIn.ZipCode = euvm.ZipCode;
+                    userLoggedIn.PhoneNumber = euvm.PhoneNumber;
+                    _context.Update(userLoggedIn);
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception)
+                {
+                    return View("Error");
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            return View("Index");
         }
 
         //Logic for change password

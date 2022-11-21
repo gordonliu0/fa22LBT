@@ -27,7 +27,7 @@ namespace fa22LBT.Models
         // NAVIGATIONAL PROPERTIES
 
         [Display(Name = "Customer")]
-        public AppUser Customer { get; set; }
+        public AppUser AppUser { get; set; }
 
         [Display(Name = "Transactions")]
         public List<Transaction> Transactions { get; set; }

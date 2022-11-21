@@ -41,11 +41,31 @@ namespace fa22LBT.Models
         [Display(Name = "User Status")]
         public Boolean IsActive { get; set; }
 
-        // EMPLOYEE FIELDS
-        [Display(Name = "Social Security")]
-        [MinLength(9)]
-        [MaxLength(9)]
-        public String? SSN { get; set; }
+        // CALCULATED PROPERTIES
+        [Display(Name = "Full Name")]
+        public String FullName
+        {
+            get
+            {
+                if (MiddleInitial != null)
+                {
+                    return this.FirstName + " " + this.MiddleInitial + " " + this.LastName;
+                }
+                else
+                {
+                    return this.FirstName + " " + this.LastName;
+                }
+            }
+        }
+
+        [Display(Name = "Address")]
+        public String FullAddress
+        {
+            get
+            {
+                return this.Address + " " + this.City + ", " + this.State + " " + this.ZipCode;
+            }
+        }
 
         // NAVIGATIONAL PROPERTIES
 
@@ -53,7 +73,7 @@ namespace fa22LBT.Models
         public List<BankAccount> BankAccounts { get; set; }
 
         [Display(Name = "Stock Portfolios")]
-        public List<StockPortfolio> StockPortfolios { get; set; }
+        public StockPortfolio StockPortfolio { get; set; }
 
         // INITIALIZE
         public AppUser()
@@ -61,11 +81,6 @@ namespace fa22LBT.Models
             if (BankAccounts == null)
             {
                 BankAccounts = new List<BankAccount>();
-            }
-
-            if (StockPortfolios == null)
-            {
-                StockPortfolios = new List<StockPortfolio>();
             }
         }
     }

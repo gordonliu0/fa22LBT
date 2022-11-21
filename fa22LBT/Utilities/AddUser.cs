@@ -73,7 +73,6 @@ namespace fa22LBT.Utilities
                 dbUser.ZipCode = aum.User.ZipCode;
                 dbUser.DOB = aum.User.DOB;
                 dbUser.IsActive = aum.User.IsActive;
-                dbUser.SSN = aum.User.SSN;
 
                 //update the database
                 _context.Update(dbUser);

@@ -114,7 +114,43 @@ namespace fa22LBT.Models
         [Display(Name = "Confirm new password")]
         [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
-    }   
+    }
+
+    public class EditUserViewModel
+    {
+        public String Email { get; set; }
+
+        [Display(Name = "First Name")]
+        [Required]
+        public String FirstName { get; set; }
+
+        [Display(Name = "Middle Initial")]
+        public String? MiddleInitial { get; set; }
+
+        [Display(Name = "Last Name")]
+        [Required]
+        public String LastName { get; set; }
+
+        [Display(Name = "Address")]
+        [Required]
+        public String Address { get; set; }
+
+        [Display(Name = "City")]
+        [Required]
+        public String City { get; set; }
+
+        [Display(Name = "State")]
+        [Required]
+        public String State { get; set; }
+
+        [Display(Name = "Zip Code")]
+        [Required]
+        public String ZipCode { get; set; }
+
+        [Display(Name = "Phone Number")]
+        [Required]
+        public String PhoneNumber { get; set; }
+    }
 
     //NOTE: This is the view model used to display basic user information
     //on the index page
@@ -124,5 +160,8 @@ namespace fa22LBT.Models
         public String UserName { get; set; }
         public String Email { get; set; }
         public String UserID { get; set; }
+        public String FullName { get; set; }
+        public String FullAddress { get; set; }
+        public String PhoneNumber { get; set; }
     }
 }

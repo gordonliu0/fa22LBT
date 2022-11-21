@@ -31,7 +31,6 @@ namespace fa22LBT.Seeding
                     City = "Houston",
                     State = "Texas",
                     ZipCode = "77001",
-                    SSN = "999888777",
                     DOB = new DateTime(2000, 1, 1),
                     IsActive = true
                 },
@@ -58,7 +57,6 @@ namespace fa22LBT.Seeding
                     City = "Houston",
                     State = "Texas",
                     ZipCode = "77001",
-                    SSN = "666555444",
                     DOB = new DateTime(2000, 1, 1),
                     IsActive = false
                 },
