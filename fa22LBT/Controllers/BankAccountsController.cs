@@ -4,19 +4,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using fa22LBT.DAL;
 using fa22LBT.Models;
+using fa22LBT.Utilities;
 
 namespace fa22LBT.Controllers
 {
     public class BankAccountsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<AppUser> _userManager;
 
-        public BankAccountsController(AppDbContext context)
+        public BankAccountsController(AppDbContext context, UserManager<AppUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: BankAccounts
@@ -36,7 +40,9 @@ namespace fa22LBT.Controllers
             }
 
             var bankAccount = await _context.BankAccounts
+                .Include(m => m.Transactions)
                 .FirstOrDefaultAsync(m => m.AccountID == id);
+
             if (bankAccount == null)
             {
                 return NotFound();
@@ -46,9 +52,11 @@ namespace fa22LBT.Controllers
         }
 
         // GET: BankAccounts/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            BankAccount bankAccount = new BankAccount();
+            bankAccount.Customer = await _userManager.FindByNameAsync(User.Identity.Name);
+            return View(bankAccount);
         }
 
         // POST: BankAccounts/Create
@@ -56,15 +64,37 @@ namespace fa22LBT.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("AccountID,AccountNo,AccountName,AccountType,AccountBalance,IsApproved")] BankAccount bankAccount)
+        public async Task<IActionResult> Create([Bind("Customer,AccountName,AccountType,AccountBalance")] BankAccount bankAccount)
         {
-            if (ModelState.IsValid)
+            bankAccount.AccountNo = Utilities.GenerateNumbers.GetAccountNumber(_context);
+
+            // Default AccountNames
+            if (bankAccount.AccountName == null)
             {
-                _context.Add(bankAccount);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (bankAccount.AccountType == AccountTypes.Savings)
+                {
+                    bankAccount.AccountName = "Longhorn Savings";
+                }
+                else if (bankAccount.AccountType == AccountTypes.Checking)
+                {
+                    bankAccount.AccountName = "Longhorn Checking";
+                }
+                else
+                {
+                    bankAccount.AccountName = "Longhorn IRA";
+                }
             }
-            return View(bankAccount);
+            // bank account balance should create new transaction
+            bankAccount.Customer = await _userManager.FindByNameAsync(bankAccount.Customer.UserName);
+            ModelState.Remove("AccountID");
+            ModelState.Remove("AccountNo");
+            _context.Add(bankAccount);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("InitialDeposit", "Transactions", new { SelectedBankAccount = bankAccount.AccountID });
+
+            //return View("Confirmation", bankAccount);
+            //return RedirectToAction("Details", "BankAccounts", new { id = bankAccount.AccountID });
         }
 
         // GET: BankAccounts/Edit/5

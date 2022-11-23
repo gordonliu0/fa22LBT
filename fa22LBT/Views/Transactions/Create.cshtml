@@ -1,25 +1,24 @@
 @model fa22LBT.Models.Transaction
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Deposits and Withdrawals";
 }
 
 <h1>Create</h1>
 
 <h4>Transaction</h4>
 <hr />
+@ViewBag.Overdrawn
 <div class="row">
     <div class="col-md-4">
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="TransactionNumber" class="control-label"></label>
-                <input asp-for="TransactionNumber" class="form-control" />
-                <span asp-validation-for="TransactionNumber" class="text-danger"></span>
-            </div>
-            <div class="form-group">
                 <label asp-for="TransactionType" class="control-label"></label>
-                <select asp-for="TransactionType" class="form-control"></select>
+                <select asp-for="TransactionType" class="form-control">
+                    <option value="0">Deposit</option>
+                    <option value="1">Withdraw</option>
+                </select>
                 <span asp-validation-for="TransactionType" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -32,25 +31,14 @@
                 <input asp-for="OrderDate" class="form-control" />
                 <span asp-validation-for="OrderDate" class="text-danger"></span>
             </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="TransactionApproved" /> @Html.DisplayNameFor(model => model.TransactionApproved)
-                </label>
-            </div>
             <div class="form-group">
                 <label asp-for="TransactionComments" class="control-label"></label>
                 <input asp-for="TransactionComments" class="form-control" />
                 <span asp-validation-for="TransactionComments" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="ToAccount" class="control-label"></label>
-                <input asp-for="ToAccount" class="form-control" />
-                <span asp-validation-for="ToAccount" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="FromAccount" class="control-label"></label>
-                <input asp-for="FromAccount" class="form-control" />
-                <span asp-validation-for="FromAccount" class="text-danger"></span>
+                <label asp-for="BankAccount" class="control-label"></label>
+                @Html.DropDownList("SelectedBankAccount", (SelectList)ViewBag.CustomerAccounts, new { @class = "form-control" })
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />

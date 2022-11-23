@@ -1,0 +1,42 @@
+﻿@model fa22LBT.Models.BankAccount
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Account Creation Confirmation</h1>
+@ViewBag.Message2
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AccountNo)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AccountNo)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AccountName)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AccountName)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AccountType)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AccountType)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.AccountBalance)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.AccountBalance)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Details" asp-controller="BankAccounts" asp-route-id="@Model.AccountID">Go to account</a> |
+    <a asp-action="Index">Back to home</a>
+</div>
+

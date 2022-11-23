@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using fa22LBT.DAL;
 
@@ -11,9 +12,11 @@ using fa22LBT.DAL;
 namespace fa22LBT.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221122210212_blah")]
+    partial class blah
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -181,7 +184,7 @@ namespace fa22LBT.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("DOB")
+                    b.Property<DateTime?>("DOB")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
@@ -276,9 +279,6 @@ namespace fa22LBT.Migrations
 
                     b.Property<int>("AccountType")
                         .HasColumnType("int");
-
-                    b.Property<decimal>("Contribution")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("CustomerId")
                         .HasColumnType("nvarchar(450)");

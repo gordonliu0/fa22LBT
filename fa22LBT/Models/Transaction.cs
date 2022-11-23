@@ -4,7 +4,7 @@ using System.Xml.Linq;
 
 namespace fa22LBT.Models
 {
-    public enum TransactionType { Deposit, Withdraw, Transfer }
+    public enum TransactionType { Deposit, Withdraw, Transfer, Fee }
 
 	public class Transaction
 	{
@@ -19,11 +19,13 @@ namespace fa22LBT.Models
 
         [Display(Name = "Transaction Amount")]
         [DisplayFormat(DataFormatString = "{0:c}")]
+        [Range(0, Double.MaxValue, ErrorMessage = "The transaction amount must be greater than 0.")]
         public Decimal TransactionAmount { get; set; }
 
         [Display(Name = "Transaction Date")]
         [DisplayFormat(DataFormatString = "{0:MM/dd/yyyy}")]
-        public DateTime OrderDate { get; set; }
+        [DataType(DataType.Date)]
+        public DateTime OrderDate { get; set; } = DateTime.Now;
 
         [Display(Name = "Approved")]
         public Boolean TransactionApproved { get; set; }
@@ -33,11 +35,11 @@ namespace fa22LBT.Models
 
         // account num
         [Display(Name = "To Account")]
-        public Int32 ToAccount { get; set; }
+        public Int64 ToAccount { get; set; }
 
         // account num
         [Display(Name = "From Account")]
-        public Int32 FromAccount { get; set; }
+        public Int64 FromAccount { get; set; }
 
         // NAVIGATIONAL PROPERTIES
 
@@ -53,6 +55,10 @@ namespace fa22LBT.Models
 
         public Transaction()
 		{
+            if (Dispute == null)
+            {
+                Dispute = new List<Dispute>();
+            }
 		}
 	}
 }

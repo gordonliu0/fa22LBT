@@ -5,18 +5,36 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using fa22LBT.DAL;
 using fa22LBT.Models;
+using fa22LBT.Utilities;
 
 namespace fa22LBT.Controllers
 {
     public class TransactionsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<AppUser> _userManager;
 
-        public TransactionsController(AppDbContext context)
+        private SelectList GetAllAccountsSelectList()
+        {
+            List<BankAccount> bankAccountList = _context.BankAccounts.Where(o => o.Customer.UserName == User.Identity.Name).ToList();
+
+            //convert the list to a SelectList by calling SelectList constructor
+            //MonthID and MonthName are the names of the properties on the Month class
+            //MonthID is the primary key
+            SelectList monthSelectList = new SelectList(bankAccountList.OrderBy(m => m.AccountNo), "AccountID", "AccountQuickInfo");
+
+            //return the SelectList
+            return monthSelectList;
+        }
+
+        public TransactionsController(AppDbContext context, UserManager<AppUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: Transactions
@@ -48,7 +66,184 @@ namespace fa22LBT.Controllers
         // GET: Transactions/Create
         public IActionResult Create()
         {
-            return View();
+            ViewBag.CustomerAccounts = GetAllAccountsSelectList();
+            Transaction t = new Transaction();
+            return View(t);
+        }
+
+        public async Task<IActionResult> InitialDepositIRA(Transaction transaction, string SelectedBankAccount)
+        {
+            ViewBag.IsInitial = true;
+            transaction.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            BankAccount dbBankAccount = _context.BankAccounts.Include(db => db.Customer).FirstOrDefault(db => db.AccountID == SelectedBankAccount);
+            transaction.BankAccount = dbBankAccount;
+            transaction.ToAccount = dbBankAccount.AccountNo;
+            transaction.TransactionComments = "Initial Deposit";
+            transaction.TransactionType = TransactionType.Deposit;
+            dbBankAccount.AccountBalance = 0;
+            _context.Update(dbBankAccount);
+
+            if (dbBankAccount.Customer.Age >= 70)
+            {
+                ViewBag.CanContribute = false;
+                ViewBag.Message = "You are too old to make a contribution to your IRA.";
+            }
+            else
+            {
+                if (dbBankAccount.Contribution == 5000)
+                {
+                    ViewBag.Message = "You have made your maximum contribution this year.";
+                    ViewBag.CanContribute = false;
+                    ViewBag.SelectedBankAccount = SelectedBankAccount;
+                    return View("ContributionModification", transaction);
+                }
+                else if (dbBankAccount.Contribution + transaction.TransactionAmount > 5000)
+                {
+                    Decimal allowedContribution = 5000m - dbBankAccount.Contribution;
+                    ViewBag.Message = "You can contribute an additional " + allowedContribution.ToString();
+                    ViewBag.CanContribute = true;
+                    ViewBag.SelectedBankAccount = SelectedBankAccount;
+                    ViewBag.allowedContribution = allowedContribution;
+                    return View("ContributionModification", transaction);
+                }
+                else
+                {
+                    transaction.TransactionApproved = true;
+                    dbBankAccount.AccountBalance += transaction.TransactionAmount;
+                    dbBankAccount.Contribution += transaction.TransactionAmount;
+                    _context.Update(dbBankAccount);
+                }
+            }
+
+            if (transaction.TransactionApproved == false)
+            {
+                ViewBag.Message2 = "Welcome to your new account! Your initial deposit is pending approval, but feel free to take a look around. ";
+            }
+            else
+            {
+                ViewBag.Message2 = "Welcome to your new account! Your initial deposit has been added.";
+            }
+
+            _context.Add(transaction);
+            await _context.SaveChangesAsync();
+            return View("~/Views/BankAccounts/Confirmation.cshtml", dbBankAccount);
+
+        }
+
+        public async Task<IActionResult> InitialDeposit(string SelectedBankAccount)
+        {
+            ViewBag.IsInitial = true;
+            Transaction transaction = new Transaction();
+            transaction.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            BankAccount dbBankAccount = _context.BankAccounts.Include(db => db.Customer).FirstOrDefault(db => db.AccountID == SelectedBankAccount);
+            transaction.BankAccount = dbBankAccount;
+            transaction.ToAccount = dbBankAccount.AccountNo;
+            transaction.TransactionComments = "Initial Deposit";
+            transaction.TransactionType = TransactionType.Deposit;
+            transaction.TransactionAmount = dbBankAccount.AccountBalance;
+            dbBankAccount.AccountBalance = 0;
+            _context.Update(dbBankAccount);
+            await _context.SaveChangesAsync();
+
+            if (dbBankAccount.AccountType == AccountTypes.IRA)
+            {
+                if (dbBankAccount.Customer.Age >= 70)
+                {
+                    ViewBag.CanContribute = false;
+                    ViewBag.Message = "You are too old to make a contribution to your IRA.";
+                }
+                else
+                {
+                    if (dbBankAccount.Contribution == 5000)
+                    {
+                        ViewBag.Message = "You have made your maximum contribution this year.";
+                        ViewBag.CanContribute = false;
+                        ViewBag.SelectedBankAccount = SelectedBankAccount;
+                        return View("ContributionModification", transaction);
+                    }
+                    else if (dbBankAccount.Contribution + transaction.TransactionAmount > 5000)
+                    {
+                        Decimal allowedContribution = 5000m - dbBankAccount.Contribution;
+                        ViewBag.Message = "You can contribute an additional " + allowedContribution.ToString();
+                        ViewBag.CanContribute = true;
+                        ViewBag.SelectedBankAccount = SelectedBankAccount;
+                        ViewBag.allowedContribution = allowedContribution;
+                        return View("ContributionModification", transaction);
+                    }
+                    else
+                    {
+                        transaction.TransactionApproved = true;
+                        dbBankAccount.AccountBalance += transaction.TransactionAmount;
+                        dbBankAccount.Contribution += transaction.TransactionAmount;
+                        _context.Update(dbBankAccount);
+                    }
+                }
+            }
+            else
+            {
+                if (transaction.TransactionType == TransactionType.Deposit)
+                {
+                    if (transaction.TransactionAmount > 5000)
+                    {
+                        transaction.TransactionApproved = false;
+                    }
+                    else
+                    {
+                        transaction.TransactionApproved = true;
+                        dbBankAccount.AccountBalance += transaction.TransactionAmount;
+                        _context.Update(dbBankAccount);
+                    }
+                }
+            }
+
+            // Update confirmation message
+            if (transaction.TransactionApproved == false)
+            {
+                ViewBag.Message2 = "Welcome to your new account! Your initial deposit is pending approval, but feel free to take a look around. ";
+            } else
+            {
+                ViewBag.Message2 = "Welcome to your new account! Your initial deposit has been added.";
+            }
+
+            _context.Add(transaction);
+            await _context.SaveChangesAsync();
+            return View("~/Views/BankAccounts/Confirmation.cshtml", dbBankAccount);
+
+        }
+
+        public async Task AddIRAFee(String SelectedBankAccount, Int32 TransactionNumber)
+        {
+            Transaction transaction = new Transaction();
+            transaction.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            BankAccount dbBankAccount = _context.BankAccounts.Include(db => db.Customer).FirstOrDefault(db => db.AccountID == SelectedBankAccount);
+            transaction.BankAccount = dbBankAccount;
+            transaction.FromAccount = dbBankAccount.AccountNo;
+            transaction.TransactionComments = "Fee for IRA Withdrawal: " + TransactionNumber.ToString();
+            transaction.TransactionType = TransactionType.Fee;
+            transaction.TransactionAmount = 30;
+            dbBankAccount.AccountBalance -= 30;
+            _context.Update(dbBankAccount);
+            _context.Add(transaction);
+            await _context.SaveChangesAsync();
+        }
+        // POST: Transactions/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> WithdrawIRAUnder60([Bind("TransactionID,TransactionNumber,TransactionType,TransactionAmount,OrderDate,TransactionApproved,TransactionComments,BankAccount")] Transaction transaction, String SelectedBankAccount)
+        {
+            ViewBag.IsInitial = false;
+            BankAccount dbBankAccount = _context.BankAccounts.Include(db => db.Customer).FirstOrDefault(db => db.AccountID == SelectedBankAccount);
+            transaction.BankAccount = dbBankAccount;
+            transaction.TransactionType = TransactionType.Withdraw;
+            dbBankAccount.AccountBalance -= transaction.TransactionAmount;
+            transaction.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            transaction.FromAccount = dbBankAccount.AccountNo;
+            _context.Add(transaction);
+            await _context.SaveChangesAsync();
+            await this.AddIRAFee(SelectedBankAccount, transaction.TransactionNumber);
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: Transactions/Create
@@ -56,15 +251,134 @@ namespace fa22LBT.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("TransactionID,TransactionNumber,TransactionType,TransactionAmount,OrderDate,TransactionApproved,TransactionComments,ToAccount,FromAccount")] Transaction transaction)
+        public async Task<IActionResult> Create([Bind("TransactionID,TransactionNumber,TransactionType,TransactionAmount,OrderDate,TransactionApproved,TransactionComments,BankAccount")] Transaction transaction, String SelectedBankAccount)
         {
-            if (ModelState.IsValid)
+            ViewBag.IsInitial = false;
+            transaction.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            BankAccount dbBankAccount = _context.BankAccounts.Include(db => db.Customer).FirstOrDefault(db => db.AccountID == SelectedBankAccount) ;
+            transaction.BankAccount = dbBankAccount;
+
+            if (dbBankAccount.AccountType == AccountTypes.IRA)
             {
-                _context.Add(transaction);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (transaction.TransactionType == TransactionType.Deposit)
+                {
+                    transaction.ToAccount = dbBankAccount.AccountNo;
+                    if  (dbBankAccount.Customer.Age >= 70)
+                    {
+                        ViewBag.CanContribute = false;
+                        ViewBag.Message = "You are too old to make a contribution to your IRA.";
+                    } else
+                    {
+                        if (dbBankAccount.Contribution == 5000)
+                        {
+                            ViewBag.Message = "You have made your maximum contribution this year.";
+                            ViewBag.CanContribute = false;
+                            ViewBag.SelectedBankAccount = SelectedBankAccount;
+                            return View("ContributionModification", transaction);
+                        }
+                        else if (dbBankAccount.Contribution + transaction.TransactionAmount > 5000)
+                        {
+                            Decimal allowedContribution = 5000m - dbBankAccount.Contribution;
+                            ViewBag.Message = "You can contribute an additional " + allowedContribution.ToString();
+                            ViewBag.CanContribute = true;
+                            ViewBag.SelectedBankAccount = SelectedBankAccount;
+                            ViewBag.allowedContribution = allowedContribution;
+                            return View("ContributionModification", transaction);
+                        }
+                        else
+                        {
+                            transaction.TransactionApproved = true;
+                            dbBankAccount.AccountBalance += transaction.TransactionAmount;
+                            dbBankAccount.Contribution += transaction.TransactionAmount;
+                            _context.Update(dbBankAccount);
+                        }
+                    }
+                    
+                }
+                else if (transaction.TransactionType == TransactionType.Withdraw)
+                {
+                    transaction.FromAccount = dbBankAccount.AccountNo;
+                    if (dbBankAccount.Customer.Age > 65)
+                    {
+                        if (transaction.TransactionAmount > dbBankAccount.AccountBalance)
+                        {
+                            ViewBag.CustomerAccounts = GetAllAccountsSelectList();
+                            ViewBag.Overdrawn = "You do not have sufficient funds for this withdrawal.";
+                            return View(transaction);
+                        }
+                        else
+                        {
+                            transaction.TransactionApproved = true;
+                            dbBankAccount.AccountBalance -= transaction.TransactionAmount;
+                            _context.Update(dbBankAccount);
+                        }
+                    } else
+                    {
+                        if (transaction.TransactionAmount > dbBankAccount.AccountBalance)
+                        {
+                            ViewBag.CustomerAccounts = GetAllAccountsSelectList();
+                            ViewBag.Overdrawn = "You do not have sufficient funds for this withdrawal.";
+                            return View(transaction);
+                        } else if (transaction.TransactionAmount > 3000)
+                        {
+                            ViewBag.CustomerAccounts = GetAllAccountsSelectList();
+                            ViewBag.Overdrawn = "You cannot withdraw more than 3000 from IRA if you are 65 or under.";
+                            return View(transaction);
+                            
+                        } else
+                        {
+                            ViewBag.SelectedBankAccount = SelectedBankAccount;
+                            ViewBag.LowerOption = transaction.TransactionAmount - 30;
+
+                            if (transaction.TransactionAmount + 30 > dbBankAccount.AccountBalance)
+                            {
+                                ViewBag.UpperOption = dbBankAccount.AccountBalance - 30;
+                            } else
+                            {
+                                ViewBag.UpperOption = transaction.TransactionAmount;
+                            }
+                            
+                            return View("IRAWithdrawOptions", transaction);
+                        }
+                    }
+                    
+                }
+            } else
+            {
+                if (transaction.TransactionType == TransactionType.Deposit)
+                {
+                    transaction.ToAccount = dbBankAccount.AccountNo;
+                    if (transaction.TransactionAmount > 5000)
+                    {
+                        transaction.TransactionApproved = false;
+                    }
+                    else
+                    {
+                        transaction.TransactionApproved = true;
+                        dbBankAccount.AccountBalance += transaction.TransactionAmount;
+                        _context.Update(dbBankAccount);
+                    }
+                }
+                else if (transaction.TransactionType == TransactionType.Withdraw)
+                {
+                    transaction.FromAccount = dbBankAccount.AccountNo;
+                    if (transaction.TransactionAmount > dbBankAccount.AccountBalance)
+                    {
+                        ViewBag.CustomerAccounts = GetAllAccountsSelectList();
+                        ViewBag.Overdrawn = "You do not have sufficient funds for this withdrawal.";
+                        return View(transaction);
+                    }
+                    else
+                    {
+                        transaction.TransactionApproved = true;
+                        dbBankAccount.AccountBalance -= transaction.TransactionAmount;
+                        _context.Update(dbBankAccount);
+                    }
+                }
             }
-            return View(transaction);
+            _context.Add(transaction);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Transactions/Edit/5

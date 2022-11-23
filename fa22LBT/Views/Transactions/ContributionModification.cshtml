@@ -1,0 +1,57 @@
+﻿@model fa22LBT.Models.Transaction
+
+@{
+    ViewData["Title"] = "Deposits and Withdrawals";
+}
+
+@ViewBag.Message
+
+@if (ViewBag.CanContribute)
+{
+    @if (ViewBag.IsInitial == false)
+{
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="TransactionAmount" class="control-label"></label>
+                <input asp-for="TransactionAmount" class="form-control" value=@ViewBag.allowedContribution />
+                <span asp-validation-for="TransactionAmount" class="text-danger"></span>
+            </div>
+            <input type="hidden" id="SelectedBankAccount" name="SelectedBankAccount" value=@ViewBag.SelectedBankAccount>
+            <div class="form-group">
+                <input type="submit" value="Update contribution" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+}
+
+        @if (ViewBag.IsInitial == true)
+{
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="InitialDepositIRA">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="TransactionAmount" class="control-label"></label>
+                <input asp-for="TransactionAmount" class="form-control" value=@ViewBag.allowedContribution />
+                <span asp-validation-for="TransactionAmount" class="text-danger"></span>
+            </div>
+            <input type="hidden" id="SelectedBankAccount" name="SelectedBankAccount" value=@ViewBag.SelectedBankAccount>
+            <div class="form-group">
+                <input type="submit" value="Update contribution" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+}
+}
+
+@if (ViewBag.CanContribute == false)
+{
+    <p>You've met your yearly contribution limit.</p>
+}
+<a class="button" asp-action="Index">Home</a>
+

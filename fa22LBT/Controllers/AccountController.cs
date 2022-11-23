@@ -164,6 +164,7 @@ namespace fa22LBT.Controllers
             ivm.PhoneNumber = user.PhoneNumber;
             ivm.FullName = user.FullName;
             ivm.FullAddress = user.FullAddress;
+            ivm.Age = user.Age;
 
             //send data to the view
             return View(ivm);

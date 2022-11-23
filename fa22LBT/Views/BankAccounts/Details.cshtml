@@ -10,38 +10,98 @@
     <h4>BankAccount</h4>
     <hr />
     <dl class="row">
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.AccountNo)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.AccountNo)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.AccountName)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.AccountName)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.AccountType)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.AccountType)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.AccountBalance)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.AccountBalance)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.IsApproved)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.IsApproved)
         </dd>
     </dl>
 </div>
+
+<h5>Account Transaction History</h5>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Transaction Number
+            </th>
+            <th>
+                Transaction Type
+            </th>
+            <th>
+                Amount
+            </th>
+            <th>
+                Date
+            </th>
+            <th>
+                Approved?
+            </th>
+            <th>
+                Comment
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (Transaction item in Model.Transactions)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TransactionNumber)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TransactionType)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TransactionAmount)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.OrderDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TransactionApproved)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TransactionComments)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.TransactionID">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.TransactionID">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.TransactionID">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
 <div>
     <a asp-action="Edit" asp-route-id="@Model?.AccountID">Edit</a> |
     <a asp-action="Index">Back to List</a>

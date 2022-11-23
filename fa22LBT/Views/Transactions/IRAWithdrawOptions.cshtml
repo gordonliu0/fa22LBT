@@ -1,0 +1,33 @@
+﻿@model fa22LBT.Models.Transaction
+
+@{
+    ViewData["Title"] = "Deposits and Withdrawals";
+}
+
+<p> You can either withdraw your desired amount or have the fee taken out of the desired amount. </p>
+<dt class="col-sm-2">
+    @Html.DisplayNameFor(model => model.TransactionComments)
+</dt>
+<dd class="col-sm-10">
+    @Html.DisplayFor(model => model.TransactionComments)
+</dd>
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="WithdrawIRAUnder60">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label class="control-label">Choose one option for Withdrawal ($30 fee is always applied):</label>
+                <select asp-for="TransactionAmount" class="form-control">
+                    <option selected="selected" value=@ViewBag.UpperOption>@ViewBag.UpperOption</option>
+                    <option selected="selected" value=@ViewBag.LowerOption>@ViewBag.LowerOption</option>
+                </select>
+                <span asp-validation-for="TransactionAmount" class="text-danger"></span>
+            </div>
+            <input type="hidden" id="SelectedBankAccount" name="SelectedBankAccount" value=@ViewBag.SelectedBankAccount>
+            @Html.HiddenFor(m => m.TransactionComments)
+            <div class="form-group">
+                <input type="submit" value="Update contribution" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>

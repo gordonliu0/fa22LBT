@@ -70,7 +70,7 @@ namespace fa22LBT.Models
         [Display(Name = "Birthday")]
         [DataType(DataType.DateTime)]
         [DisplayFormat(ApplyFormatInEditMode = true, DataFormatString = "{0:MM/dd/yyyy}")]
-        public DateTime? DOB { get; set; }
+        public DateTime DOB { get; set; }
 
         [Display(Name = "User Status")]
         public Boolean IsActive { get; set; }
@@ -163,5 +163,6 @@ namespace fa22LBT.Models
         public String FullName { get; set; }
         public String FullAddress { get; set; }
         public String PhoneNumber { get; set; }
+        public Int32 Age { get; set; }
     }
 }
