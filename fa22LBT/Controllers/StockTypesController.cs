@@ -58,13 +58,10 @@ namespace fa22LBT.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("StockTypeID,StockTypeName")] StockType stockType)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(stockType);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(stockType);
+            ModelState.Remove("StockTypeID");
+            _context.Add(stockType);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: StockTypes/Edit/5

@@ -13,7 +13,7 @@
 </dd>
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="WithdrawIRAUnder65">
+        <form asp-action="TransferIRAUnder65">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
                 <label class="control-label">Choose one option for Withdrawal ($30 fee is always applied):</label>
@@ -23,10 +23,12 @@
                 </select>
                 <span asp-validation-for="TransactionAmount" class="text-danger"></span>
             </div>
-            <input type="hidden" id="SelectedBankAccount" name="SelectedBankAccount" value=@ViewBag.SelectedBankAccount>
-            @Html.HiddenFor(m => m.TransactionComments)
+            <input type="hidden" id="ToBankAccount" name="ToBankAccount" value=@ViewBag.ToBankAccount>
+            <input type="hidden" id="FromBankAccount" name="FromBankAccount" value=@ViewBag.FromBankAccount>
+            @Html.HiddenFor(m => m.TransactionApproved)
+            @Html.HiddenFor(m => m.OrderDate)
             <div class="form-group">
-                <input type="submit" value="Update contribution" class="btn btn-primary" />
+                <input type="submit" value="Update transfer amount" class="btn btn-primary" />
             </div>
         </form>
     </div>

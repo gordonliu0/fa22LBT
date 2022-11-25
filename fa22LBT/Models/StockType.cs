@@ -16,6 +16,14 @@ namespace fa22LBT.Models
 
         [Display(Name = "Stocks")]
         public List<Stock> Stocks { get; set; }
+
+        public StockType()
+        {
+            if (Stocks == null)
+            {
+                Stocks = new List<Stock>();
+            }
+        }
     }
 }
 

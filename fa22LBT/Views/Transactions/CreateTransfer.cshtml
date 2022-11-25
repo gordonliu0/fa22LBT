@@ -1,0 +1,44 @@
+@model fa22LBT.Models.Transaction
+
+@{
+    ViewData["Title"] = "Transfer";
+}
+
+<h1>Transfer</h1>
+
+<h4>Transfer Money between Your Accounts</h4>
+<hr />
+@ViewBag.Overdrawn
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="CreateTransfer">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="TransactionAmount" class="control-label"></label>
+                <input asp-for="TransactionAmount" class="form-control" />
+                <span asp-validation-for="TransactionAmount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="OrderDate" class="control-label"></label>
+                <input asp-for="OrderDate" class="form-control" />
+                <span asp-validation-for="OrderDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label class="control-label">To Account</label>
+                @Html.DropDownList("ToBankAccount", (SelectList)ViewBag.CustomerAccounts, new { @class = "form-control" })
+            </div>
+            <div class="form-group">
+                <label class="control-label">From Account</label>
+                @Html.DropDownList("FromBankAccount", (SelectList)ViewBag.CustomerAccounts, new { @class = "form-control" })
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
