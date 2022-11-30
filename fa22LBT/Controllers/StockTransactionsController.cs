@@ -131,7 +131,7 @@ namespace fa22LBT.Controllers
             transactionFee.TransactionAmount = 10;
             transactionFee.OrderDate = stockTransaction.OrderDate;
             transactionFee.TransactionApproved = true;
-            transactionFee.TransactionComments = "Fee for purchase of" + dbStock.StockName;
+            transactionFee.TransactionComments = "Fee for purchase of " + dbStock.StockName;
             transactionFee.FromAccount = dbBankAccount.AccountNo;
             transactionFee.BankAccount = dbBankAccount;
             _context.Add(transactionFee);

@@ -8,7 +8,9 @@ namespace fa22LBT.Models
         [Key]
         public Int32 StockHoldingID { get; set; }
 
-        [Display(Name = "Quantity of Shares Owned")]
+        [Display(Name = "Quantity of Shares")]
+        [Required]
+        [Range(1, 2147483646, ErrorMessage = "You must sell at least one share.")]
         public Int32 QuantityShares { get; set; }
 
         // CALCULATED PROPERTIES

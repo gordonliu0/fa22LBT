@@ -6,7 +6,6 @@
 
 <h1>Sell</h1>
 
-<h4>StockHolding</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
@@ -14,12 +13,15 @@
         <form asp-action="Sell">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="StockHoldingID" />
-            <input type="hidden" asp-for="QuantityShares" />
             <div class="form-group">
                 <h4>You currently own: </h4>
                 @Html.DisplayFor(model => model.QuantityShares)
-                <h4>Sell: </h4>
-                <input id="numSold" name="numSold" class="form-control" />
+                stocks of
+                @Html.DisplayFor(model => model.Stock.StockName)
+            </div>
+            <div class="form-group">
+                <h4>Input a number to Sell: </h4>
+                <input asp-for="QuantityShares" class="form-control" />
                 <span asp-validation-for="QuantityShares" class="text-danger"></span>
             </div>
             <div class="form-group">

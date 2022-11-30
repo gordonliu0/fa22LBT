@@ -111,7 +111,7 @@ namespace fa22LBT.Controllers
             // CREATE TO TRANSACTION
             Transaction tTo = new Transaction();
             tTo.TransactionAmount = transaction.TransactionAmount;
-            tTo.TransactionComments = "Transfer to " + ToBankAccount.ToString();
+            tTo.TransactionComments = "Transfer from Account [" + dbFromBankAccount.HiddenAccountNo.ToString() + "]" + dbFromBankAccount.AccountName;
             tTo.TransactionType = TransactionType.Deposit;
             tTo.TransactionApproved = true;
             tTo.OrderDate = transaction.OrderDate;
@@ -122,7 +122,7 @@ namespace fa22LBT.Controllers
             // CREATE FROM TRANSACTION
             Transaction tFrom = new Transaction();
             tFrom.TransactionAmount = transaction.TransactionAmount;
-            tFrom.TransactionComments = "Transfer from " + ToBankAccount.ToString();
+            tFrom.TransactionComments = "Transfer to Account [" + dbToBankAccount.HiddenAccountNo.ToString() + "]" + dbToBankAccount.AccountName;
             tFrom.BankAccount = dbFromBankAccount;
             tFrom.TransactionType = TransactionType.Withdraw;
             tFrom.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context)-1;
@@ -146,7 +146,7 @@ namespace fa22LBT.Controllers
 
             Transaction tTo = new Transaction();
             tTo.TransactionAmount = transaction.TransactionAmount;
-            tTo.TransactionComments = "Transfer to " + ToBankAccount.ToString();
+            tTo.TransactionComments = "Transfer from Account [" + dbFromBankAccount.HiddenAccountNo.ToString() + "]" + dbFromBankAccount.AccountName;
             tTo.TransactionType = TransactionType.Deposit;
             Int32 tToTransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
             await Create(tTo, ToBankAccount);
@@ -164,7 +164,7 @@ namespace fa22LBT.Controllers
 
             Transaction tFrom = new Transaction();
             tFrom.TransactionAmount = transaction.TransactionAmount;
-            tFrom.TransactionComments = "Transfer from " + ToBankAccount.ToString();
+            tFrom.TransactionComments = "Transfer to Account [" + dbToBankAccount.HiddenAccountNo.ToString() + "]" + dbToBankAccount.AccountName;
             tFrom.TransactionType = TransactionType.Withdraw;
             Int32 tFromTransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
             await Create(tFrom, FromBankAccount);

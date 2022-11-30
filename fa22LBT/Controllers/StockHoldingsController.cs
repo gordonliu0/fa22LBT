@@ -76,7 +76,7 @@ namespace fa22LBT.Controllers
                 return NotFound();
             }
 
-            var stockHolding = await _context.StockHoldings.FindAsync(id);
+            StockHolding stockHolding = _context.StockHoldings.Include(sh => sh.Stock).FirstOrDefault(sh => sh.StockHoldingID == id);
             if (stockHolding == null)
             {
                 return NotFound();
@@ -100,12 +100,19 @@ namespace fa22LBT.Controllers
                 where st.Stock.StockID == dbStockHolding.Stock.StockID
                 orderby st.StockTransactionID
                 select st.StockTransactionID;
+            numSold = stockHolding.QuantityShares;
 
             if (numSold > dbStockHolding.QuantityShares)
             {
                 ViewBag.Message = "You have attempted to sell more shares than you own. Please try again.";
-                return View(stockHolding);
-            } else
+                return View(dbStockHolding);
+            }
+            else if (numSold <= 0)
+            {
+                ViewBag.Message = "You must sell at least 1 share and it must be an integer. Please try again.";
+                return View(dbStockHolding);
+            }
+            else
             {
                 // Update StockHolding (reduce QuantityShares or Remove if 0)
                 dbStockHolding.QuantityShares -= numSold;
