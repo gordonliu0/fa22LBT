@@ -4,19 +4,36 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using fa22LBT.DAL;
 using fa22LBT.Models;
+using fa22LBT.Utilities;
 
 namespace fa22LBT.Controllers
 {
     public class StockTransactionsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<AppUser> _userManager;
 
-        public StockTransactionsController(AppDbContext context)
+        public StockTransactionsController(AppDbContext context, UserManager<AppUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
+        }
+
+        private SelectList GetAllStocksSelectList()
+        {
+            List<Stock> stockList = _context.Stocks.Include(s => s.StockType).ToList();
+
+            //convert the list to a SelectList by calling SelectList constructor
+            //MonthID and MonthName are the names of the properties on the Month class
+            //MonthID is the primary key
+            SelectList selectList = new SelectList(stockList.OrderBy(m => m.TickerSymbol), "StockID", "StockQuickInfo");
+
+            //return the SelectList
+            return selectList;
         }
 
         // GET: StockTransactions
@@ -48,7 +65,9 @@ namespace fa22LBT.Controllers
         // GET: StockTransactions/Create
         public IActionResult Create()
         {
-            return View();
+            ViewBag.AllStocks = GetAllStocksSelectList();
+            StockTransaction t = new StockTransaction();
+            return View(t);
         }
 
         // POST: StockTransactions/Create
@@ -56,19 +75,89 @@ namespace fa22LBT.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("StockTransactionID,QuantityShares,PricePerShare,OrderDate")] StockTransaction stockTransaction)
+        public async Task<IActionResult> Create([Bind("StockTransactionID,QuantityShares,PricePerShare,OrderDate,Stock,Stock.StockPrice")] StockTransaction stockTransaction, int SelectedStock)
         {
-            if (ModelState.IsValid)
+            // Gather Selected Stock and Associated StockPortfolio, CashPortfolio 
+            Stock dbStock = _context.Stocks.FirstOrDefault(o => o.StockID == SelectedStock);
+            StockPortfolio dbStockPortfolio = _context.StockPortfolios.Include(o => o.BankAccount).Include(o => o.StockHoldings).ThenInclude(sh => sh.Stock).ThenInclude(s => s.StockType).FirstOrDefault(o => o.AppUser.UserName == User.Identity.Name);
+            BankAccount dbBankAccount = _context.BankAccounts.FirstOrDefault(o => o.AccountID == dbStockPortfolio.BankAccount.AccountID);
+            stockTransaction.PricePerShare = dbStock.StockPrice;
+            stockTransaction.STransactionNo = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+
+            // Check if User has enough money in StockPortfolio Cash Account to pay for stocks
+            if (stockTransaction.QuantityShares * stockTransaction.PricePerShare + 10 > dbBankAccount.AccountBalance)
             {
-                _context.Add(stockTransaction);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ViewBag.AllStocks = GetAllStocksSelectList();
+                int maxPurchase = (int)((dbBankAccount.AccountBalance - 10)/stockTransaction.PricePerShare);
+                ViewBag.Message = "You do not have sufficient funds for this purchase. You can purchase a maximum of " + maxPurchase.ToString() + " of " + dbStock.TickerSymbol;
+                return View(stockTransaction);
             }
-            return View(stockTransaction);
+
+            // Check if User has already bought this type of stock before
+            StockHolding dbStockHolding = dbStockPortfolio.StockHoldings.FirstOrDefault(o => o.Stock.StockID == SelectedStock);
+            // If no: create new stock holding and add the number of shares
+            // If yes: add number of shares to old stock holding
+            if (dbStockHolding == null)
+            {
+                StockHolding stockHolding = new StockHolding();
+                stockHolding.Stock = dbStock;
+                stockHolding.StockPortfolio = dbStockPortfolio;
+                stockHolding.QuantityShares = stockTransaction.QuantityShares;
+                _context.Add(stockHolding);
+            } else
+            {
+                dbStockHolding.QuantityShares += stockTransaction.QuantityShares;
+                _context.Update(dbStockHolding);
+            }
+            await _context.SaveChangesAsync();
+
+            // Create and add new Transaction
+            Transaction transaction = new Transaction();
+            transaction.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            transaction.TransactionType = TransactionType.Withdraw;
+            transaction.TransactionAmount = stockTransaction.QuantityShares * stockTransaction.PricePerShare;
+            transaction.OrderDate = stockTransaction.OrderDate;
+            transaction.TransactionApproved = true;
+            transaction.TransactionComments = "Stock Purchase - Account " + dbBankAccount.AccountNo;
+            transaction.FromAccount = dbBankAccount.AccountNo;
+            transaction.BankAccount = dbBankAccount;
+            _context.Add(transaction);
+            await _context.SaveChangesAsync();
+
+            // Create and add new Fee
+            Transaction transactionFee = new Transaction();
+            transactionFee.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            transactionFee.TransactionType = TransactionType.Fee;
+            transactionFee.TransactionAmount = 10;
+            transactionFee.OrderDate = stockTransaction.OrderDate;
+            transactionFee.TransactionApproved = true;
+            transactionFee.TransactionComments = "Fee for purchase of" + dbStock.StockName;
+            transactionFee.FromAccount = dbBankAccount.AccountNo;
+            transactionFee.BankAccount = dbBankAccount;
+            _context.Add(transactionFee);
+            await _context.SaveChangesAsync();
+
+            // Update CashBalances for dbBankAccount and dbStockPortfolio
+            dbBankAccount.AccountBalance -= stockTransaction.QuantityShares * stockTransaction.PricePerShare + 10;
+            dbStockPortfolio.CashBalance = dbBankAccount.AccountBalance;
+            _context.Update(dbBankAccount);
+
+            // Update dbStockPortfolio balanced status
+            dbStockPortfolio.CalculateBalancedStatus();
+            _context.Update(dbStockPortfolio);
+            await _context.SaveChangesAsync();
+
+            // Create and Add new StockTransaction
+            stockTransaction.StockPortfolio = dbStockPortfolio;
+            stockTransaction.Stock = dbStock;
+            _context.Add(stockTransaction);
+            await _context.SaveChangesAsync();
+
+            return View("PurchaseConfirmation", stockTransaction);
         }
 
-        // GET: StockTransactions/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // GET: StockTransactions/Sell/5
+        public async Task<IActionResult> Sell(int? id)
         {
             if (id == null || _context.StockTransactions == null)
             {
@@ -83,12 +172,12 @@ namespace fa22LBT.Controllers
             return View(stockTransaction);
         }
 
-        // POST: StockTransactions/Edit/5
+        // POST: StockTransactions/Sell/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("StockTransactionID,QuantityShares,PricePerShare,OrderDate")] StockTransaction stockTransaction)
+        public async Task<IActionResult> Sell(int id, [Bind("StockTransactionID,QuantityShares,PricePerShare,OrderDate")] StockTransaction stockTransaction)
         {
             if (id != stockTransaction.StockTransactionID)
             {

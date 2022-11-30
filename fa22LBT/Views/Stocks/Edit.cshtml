@@ -28,6 +28,12 @@
                 <input asp-for="StockPrice" class="form-control" />
                 <span asp-validation-for="StockPrice" class="text-danger"></span>
             </div>
+            <input type="hidden" id="StockType.StockTypeName" name="StockType.StockTypeName" value="@Model.StockType.StockTypeName" />
+            @*
+        <div class="form-group">
+            <label asp-for="StockType" class="control-label"></label>
+            @Html.DropDownList("SelectedStockType", (SelectList)ViewBag.AllStockTypes, new { @class = "form-control" })
+        </div>*@
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary" />
             </div>

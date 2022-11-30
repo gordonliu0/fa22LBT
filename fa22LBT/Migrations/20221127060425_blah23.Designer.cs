@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using fa22LBT.DAL;
 
@@ -11,9 +12,11 @@ using fa22LBT.DAL;
 namespace fa22LBT.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221127060425_blah23")]
+    partial class blah23
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -350,45 +353,17 @@ namespace fa22LBT.Migrations
                     b.ToTable("Stocks");
                 });
 
-            modelBuilder.Entity("fa22LBT.Models.StockHolding", b =>
-                {
-                    b.Property<int>("StockHoldingID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StockHoldingID"));
-
-                    b.Property<int>("QuantityShares")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StockID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("StockPortfolioAccountID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("StockHoldingID");
-
-                    b.HasIndex("StockID");
-
-                    b.HasIndex("StockPortfolioAccountID");
-
-                    b.ToTable("StockHoldings");
-                });
-
             modelBuilder.Entity("fa22LBT.Models.StockPortfolio", b =>
                 {
                     b.Property<string>("AccountID")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("AccountName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long>("AccountNo")
-                        .HasColumnType("bigint");
+                    b.Property<int>("AccountNo")
+                        .HasColumnType("int");
 
                     b.Property<string>("AppUserForeignKey")
                         .HasColumnType("nvarchar(450)");
@@ -433,9 +408,6 @@ namespace fa22LBT.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("QuantityShares")
-                        .HasColumnType("int");
-
-                    b.Property<int>("STransactionNo")
                         .HasColumnType("int");
 
                     b.Property<int>("StockID")
@@ -580,7 +552,7 @@ namespace fa22LBT.Migrations
             modelBuilder.Entity("fa22LBT.Models.Dispute", b =>
                 {
                     b.HasOne("fa22LBT.Models.Transaction", "DisputeTransaction")
-                        .WithMany("Disputes")
+                        .WithMany("Dispute")
                         .HasForeignKey("DisputeTransactionTransactionID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -597,25 +569,6 @@ namespace fa22LBT.Migrations
                         .IsRequired();
 
                     b.Navigation("StockType");
-                });
-
-            modelBuilder.Entity("fa22LBT.Models.StockHolding", b =>
-                {
-                    b.HasOne("fa22LBT.Models.Stock", "Stock")
-                        .WithMany("StockHoldings")
-                        .HasForeignKey("StockID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("fa22LBT.Models.StockPortfolio", "StockPortfolio")
-                        .WithMany("StockHoldings")
-                        .HasForeignKey("StockPortfolioAccountID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Stock");
-
-                    b.Navigation("StockPortfolio");
                 });
 
             modelBuilder.Entity("fa22LBT.Models.StockPortfolio", b =>
@@ -683,15 +636,11 @@ namespace fa22LBT.Migrations
 
             modelBuilder.Entity("fa22LBT.Models.Stock", b =>
                 {
-                    b.Navigation("StockHoldings");
-
                     b.Navigation("StockTransactions");
                 });
 
             modelBuilder.Entity("fa22LBT.Models.StockPortfolio", b =>
                 {
-                    b.Navigation("StockHoldings");
-
                     b.Navigation("StockTransactions");
                 });
 
@@ -702,7 +651,7 @@ namespace fa22LBT.Migrations
 
             modelBuilder.Entity("fa22LBT.Models.Transaction", b =>
                 {
-                    b.Navigation("Disputes");
+                    b.Navigation("Dispute");
                 });
 #pragma warning restore 612, 618
         }

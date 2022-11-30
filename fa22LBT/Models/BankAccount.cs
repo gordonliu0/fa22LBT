@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace fa22LBT.Models
 {
-    public enum AccountTypes { Checking, Savings, IRA }
+    public enum AccountTypes { Checking, Savings, IRA, StockPortfolio }
 
     public class BankAccount
 	{
@@ -63,6 +63,8 @@ namespace fa22LBT.Models
 
         [Display(Name = "Transactions")]
         public List<Transaction> Transactions { get; set; }
+
+        public StockPortfolio StockPortfolio { get; set; }
 
         public BankAccount()
 		{

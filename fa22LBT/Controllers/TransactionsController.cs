@@ -45,6 +45,36 @@ namespace fa22LBT.Controllers
                           Problem("Entity set 'AppDbContext.Transactions'  is null.");
         }
 
+        public async Task<IActionResult> ManageDeposits()
+        {
+            List<Transaction> transactions = _context.Transactions.Where(o => o.TransactionApproved == false).ToList();
+            return _context.Transactions != null ? View(transactions) :
+                        Problem("Entity set 'AppDbContext.Transactions'  is null.");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ManageDeposits(int[] approvedDeposits)
+        {
+            foreach (int i in approvedDeposits)
+            {
+                Transaction dbTransaction = _context.Transactions.Include(o => o.BankAccount).FirstOrDefault(o => o.TransactionID == i);
+                dbTransaction.TransactionApproved = true;
+                BankAccount dbBankAccount = _context.BankAccounts.FirstOrDefault(o => o.AccountID == dbTransaction.BankAccount.AccountID);
+                dbBankAccount.AccountBalance += dbTransaction.TransactionAmount;
+                _context.Update(dbTransaction);
+                _context.Update(dbBankAccount);
+                if (dbBankAccount.StockPortfolio != null)
+                {
+                    StockPortfolio dbStockPortfolio = _context.StockPortfolios.FirstOrDefault(o => o.AccountID == dbBankAccount.StockPortfolio.AccountID);
+                    dbStockPortfolio.CashBalance += dbTransaction.TransactionAmount;
+                    _context.Update(dbStockPortfolio);
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("Index", "Transactions");
+        }
+
         // GET: Transactions/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -334,7 +364,50 @@ namespace fa22LBT.Controllers
             _context.Add(transaction);
             await _context.SaveChangesAsync();
             return View("~/Views/BankAccounts/Confirmation.cshtml", dbBankAccount);
+        }
 
+        public async Task<IActionResult> InitialDepositStockPortfolio(string SelectedBankAccount, int AccountBalance)
+        {
+            Transaction transaction = new Transaction();
+            ViewBag.IsInitial = true;
+            transaction.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            BankAccount dbBankAccount = _context.BankAccounts.Include(db => db.StockPortfolio).FirstOrDefault(db => db.AccountID == SelectedBankAccount);
+            StockPortfolio dbStockPortfolio = dbBankAccount.StockPortfolio;
+            transaction.BankAccount = dbBankAccount;
+            transaction.ToAccount = dbBankAccount.AccountNo;
+            transaction.TransactionComments = "Initial Deposit";
+            transaction.TransactionType = TransactionType.Deposit;
+            dbBankAccount.AccountBalance = 0;
+            _context.Update(dbBankAccount);
+
+            transaction.TransactionAmount += AccountBalance;
+
+            if (AccountBalance > 5000)
+            {
+                transaction.TransactionApproved = false;
+            }
+            else
+            {
+                transaction.TransactionApproved = true;
+                
+                dbBankAccount.AccountBalance += AccountBalance;
+                dbStockPortfolio.CashBalance += AccountBalance;
+                _context.Update(dbBankAccount);
+                _context.Update(dbStockPortfolio);
+            }
+
+            if (transaction.TransactionApproved == false)
+            {
+                ViewBag.Message2 = "Welcome to your new account! Your initial deposit is pending approval, but feel free to take a look around. ";
+            }
+            else
+            {
+                ViewBag.Message2 = "Welcome to your new account! Your initial deposit has been added.";
+            }
+
+            _context.Add(transaction);
+            await _context.SaveChangesAsync();
+            return View("~/Views/BankAccounts/Confirmation.cshtml", dbBankAccount);
         }
 
         public async Task<IActionResult> InitialDeposit(string SelectedBankAccount)
@@ -428,6 +501,7 @@ namespace fa22LBT.Controllers
             transaction.TransactionComments = "Fee for IRA Withdrawal: " + TransactionNumber.ToString();
             transaction.TransactionType = TransactionType.Fee;
             transaction.TransactionAmount = 30;
+            transaction.TransactionApproved = true;
             dbBankAccount.AccountBalance -= 30;
             _context.Update(dbBankAccount);
             _context.Add(transaction);

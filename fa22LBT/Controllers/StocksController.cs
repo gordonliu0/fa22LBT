@@ -39,7 +39,7 @@ namespace fa22LBT.Controllers
         public async Task<IActionResult> Index()
         {
               return _context.Stocks != null ? 
-                          View(await _context.Stocks.ToListAsync()) :
+                          View(await _context.Stocks.Include(s => s.StockType).ToListAsync()) :
                           Problem("Entity set 'AppDbContext.Stocks'  is null.");
         }
 
@@ -51,7 +51,7 @@ namespace fa22LBT.Controllers
                 return NotFound();
             }
 
-            var stock = await _context.Stocks
+            var stock = await _context.Stocks.Include(s => s.StockType)
                 .FirstOrDefaultAsync(m => m.StockID == id);
             if (stock == null)
             {
@@ -93,12 +93,13 @@ namespace fa22LBT.Controllers
         // GET: Stocks/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            ViewBag.AllStockTypes = GetAllStockTypesSelectList();
             if (id == null || _context.Stocks == null)
             {
                 return NotFound();
             }
 
-            var stock = await _context.Stocks.FindAsync(id);
+            var stock = await _context.Stocks.Include(s => s.StockType).FirstOrDefaultAsync(s => s.StockID == id);
             if (stock == null)
             {
                 return NotFound();
@@ -111,34 +112,15 @@ namespace fa22LBT.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("StockID,TickerSymbol,StockName,StockPrice")] Stock stock)
+        public async Task<IActionResult> Edit(int id, [Bind("StockID,TickerSymbol,StockName,StockPrice,StockType")] Stock stock)
         {
-            if (id != stock.StockID)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(stock);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!StockExists(stock.StockID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(stock);
+            Stock dbStock = _context.Stocks.Include(s => s.StockType).FirstOrDefault(s => s.StockID == id);
+            dbStock.TickerSymbol = stock.TickerSymbol;
+            dbStock.StockName = stock.StockName;
+            dbStock.StockPrice = stock.StockPrice;
+            _context.Update(dbStock);
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Index");
         }
 
         // GET: Stocks/Delete/5

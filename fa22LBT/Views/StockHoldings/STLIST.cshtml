@@ -1,0 +1,13 @@
+﻿@model IEnumerable<int>
+
+@{
+    ViewBag.Title = "Standings";
+}
+
+@foreach (int i in Model)
+{
+    <div>
+        @i
+        <hr />
+    </div>
+}

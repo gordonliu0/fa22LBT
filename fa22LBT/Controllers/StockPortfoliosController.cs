@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using fa22LBT.DAL;
 using fa22LBT.Models;
@@ -13,10 +14,12 @@ namespace fa22LBT.Controllers
     public class StockPortfoliosController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<AppUser> _userManager;
 
-        public StockPortfoliosController(AppDbContext context)
+        public StockPortfoliosController(AppDbContext context, UserManager<AppUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: StockPortfolios
@@ -36,7 +39,14 @@ namespace fa22LBT.Controllers
             }
 
             var stockPortfolio = await _context.StockPortfolios
+                .Include(m => m.StockHoldings)
+                .ThenInclude(sh => sh.Stock)
+                .Include(m => m.StockTransactions)
+                .ThenInclude(st => st.Stock)
+                .Include(m => m.BankAccount)
+                .ThenInclude(ba => ba.Transactions)
                 .FirstOrDefaultAsync(m => m.AccountID == id);
+
             if (stockPortfolio == null)
             {
                 return NotFound();
@@ -46,9 +56,11 @@ namespace fa22LBT.Controllers
         }
 
         // GET: StockPortfolios/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View();
+            StockPortfolio stockPortfolio = new StockPortfolio();
+            stockPortfolio.AppUser = await _userManager.FindByNameAsync(User.Identity.Name);
+            return View(stockPortfolio);
         }
 
         // POST: StockPortfolios/Create
@@ -56,15 +68,31 @@ namespace fa22LBT.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("AccountID,AccountNo,AccountName,CashBalance,IsBalanced,IsApproved")] StockPortfolio stockPortfolio)
+        public async Task<IActionResult> Create([Bind("AccountID,AccountNo,AccountName,CashBalance,IsBalanced,IsApproved,AppUser")] StockPortfolio stockPortfolio, int AccountBalance)
         {
-            if (ModelState.IsValid)
+            BankAccount cashAccount = new BankAccount();
+            cashAccount.AccountType = AccountTypes.StockPortfolio;
+
+            if (stockPortfolio.AccountName == null)
             {
-                _context.Add(stockPortfolio);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                stockPortfolio.AccountName = "Longhorn Stock Portfolio";
             }
-            return View(stockPortfolio);
+
+            cashAccount.AccountName = stockPortfolio.AccountName;
+
+            cashAccount.AccountNo = Utilities.GenerateNumbers.GetAccountNumber(_context);
+            stockPortfolio.AccountNo = Utilities.GenerateNumbers.GetAccountNumber(_context);
+
+            cashAccount.Customer = await _userManager.FindByNameAsync(stockPortfolio.AppUser.UserName);
+            stockPortfolio.AppUser = cashAccount.Customer;
+
+            _context.Add(cashAccount);
+
+            stockPortfolio.BankAccount = cashAccount;
+            _context.Add(stockPortfolio);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("InitialDepositStockPortfolio", "Transactions", new { SelectedBankAccount = cashAccount.AccountID, AccountBalance = AccountBalance});
         }
 
         // GET: StockPortfolios/Edit/5

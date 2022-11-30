@@ -27,7 +27,7 @@ namespace fa22LBT.Controllers
         public async Task<IActionResult> Index()
         {
               return _context.BankAccounts != null ? 
-                          View(await _context.BankAccounts.ToListAsync()) :
+                          View(await _context.BankAccounts.Include(m => m.StockPortfolio).ToListAsync()) :
                           Problem("Entity set 'AppDbContext.BankAccounts'  is null.");
         }
 
@@ -41,6 +41,7 @@ namespace fa22LBT.Controllers
 
             var bankAccount = await _context.BankAccounts
                 .Include(m => m.Transactions)
+                .Include(m => m.StockPortfolio)
                 .FirstOrDefaultAsync(m => m.AccountID == id);
 
             if (bankAccount == null)
@@ -91,7 +92,7 @@ namespace fa22LBT.Controllers
             _context.Add(bankAccount);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("InitialDeposit", "Transactions", new { SelectedBankAccount = bankAccount.AccountID });
+            return RedirectToAction("InitialDeposit", "Transactions", new { SelectedBankAccount = bankAccount.AccountID});
 
             //return View("Confirmation", bankAccount);
             //return RedirectToAction("Details", "BankAccounts", new { id = bankAccount.AccountID });
@@ -125,27 +126,21 @@ namespace fa22LBT.Controllers
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            var dbBankAccount = await _context.BankAccounts.Include(ba => ba.StockPortfolio).FirstOrDefaultAsync(ba => ba.AccountID == id);
+            dbBankAccount.AccountName = bankAccount.AccountName;
+            _context.Update(dbBankAccount);
+
+            if (dbBankAccount.StockPortfolio != null)
             {
-                try
-                {
-                    _context.Update(bankAccount);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BankAccountExists(bankAccount.AccountID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                var dbStockPortfolio = await _context.StockPortfolios.FindAsync(dbBankAccount.StockPortfolio.AccountID);
+                dbStockPortfolio.AccountName = bankAccount.AccountName;
+                _context.Update(dbStockPortfolio);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Details", "StockPortfolios", new { id = dbBankAccount.StockPortfolio.AccountID });
             }
-            return View(bankAccount);
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Index");
         }
 
         // GET: BankAccounts/Delete/5

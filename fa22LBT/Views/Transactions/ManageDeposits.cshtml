@@ -1,0 +1,70 @@
+@model IEnumerable<fa22LBT.Models.Transaction>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<form asp-action="ManageDeposits">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.TransactionNumber)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.TransactionType)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.TransactionAmount)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.OrderDate)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.TransactionComments)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ToAccount)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.FromAccount)
+                </th>
+                <th>Approve?</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.TransactionNumber)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.TransactionType)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.TransactionAmount)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.OrderDate)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.TransactionComments)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.ToAccount)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.FromAccount)
+                    </td>
+                    <td>
+                        <input type="checkbox" name="approvedDeposits" value="@item.TransactionID" />
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <input type="submit" value="Create" class="btn btn-primary" />
+</form>

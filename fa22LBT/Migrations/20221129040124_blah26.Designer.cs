@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using fa22LBT.DAL;
 
@@ -11,9 +12,11 @@ using fa22LBT.DAL;
 namespace fa22LBT.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221129040124_blah26")]
+    partial class blah26
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -435,9 +438,6 @@ namespace fa22LBT.Migrations
                     b.Property<int>("QuantityShares")
                         .HasColumnType("int");
 
-                    b.Property<int>("STransactionNo")
-                        .HasColumnType("int");
-
                     b.Property<int>("StockID")
                         .HasColumnType("int");
 
@@ -580,7 +580,7 @@ namespace fa22LBT.Migrations
             modelBuilder.Entity("fa22LBT.Models.Dispute", b =>
                 {
                     b.HasOne("fa22LBT.Models.Transaction", "DisputeTransaction")
-                        .WithMany("Disputes")
+                        .WithMany("Dispute")
                         .HasForeignKey("DisputeTransactionTransactionID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -702,7 +702,7 @@ namespace fa22LBT.Migrations
 
             modelBuilder.Entity("fa22LBT.Models.Transaction", b =>
                 {
-                    b.Navigation("Disputes");
+                    b.Navigation("Dispute");
                 });
 #pragma warning restore 612, 618
         }

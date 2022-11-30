@@ -19,6 +19,18 @@ namespace fa22LBT.Models
         [DisplayFormat(DataFormatString = "{0:c}")]
         public Decimal StockPrice { get; set; }
 
+        // CALCULATED PROPERTIES
+        [Display(Name = "Stock Type")]
+        public String StockQuickInfo { get
+            {
+                if (this.StockType != null)
+                {
+                    return this.TickerSymbol + " " + this.StockName + " " + this.StockType.StockTypeName + " $" + this.StockPrice + ", Purchase Fee: $10";
+                }
+                return this.TickerSymbol + " " + this.StockName + " " + " $" + this.StockPrice + ", Purchase Fee: $10";
+            }
+        }
+
         // NAVIGATIONAL PROPERTIES
 
         [Display(Name = "Stock Type")]
@@ -27,11 +39,19 @@ namespace fa22LBT.Models
         [Display(Name = "Transactions")]
         public List<StockTransaction> StockTransactions { get; set; }
 
+        [Display(Name = "Holdings")]
+        public List<StockHolding> StockHoldings { get; set; }
+
         public Stock()
 		{
             if (StockTransactions == null)
             {
                 StockTransactions = new List<StockTransaction>();
+            }
+
+            if (StockHoldings == null)
+            {
+                StockHoldings = new List<StockHolding>();
             }
         }
 	}

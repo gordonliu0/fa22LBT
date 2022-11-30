@@ -51,13 +51,13 @@ namespace fa22LBT.Models
         public BankAccount BankAccount { get; set; }
 
         [Display(Name = "Dispute")]
-        public List<Dispute> Dispute { get; set; }
+        public List<Dispute> Disputes { get; set; }
 
         public Transaction()
 		{
-            if (Dispute == null)
+            if (Disputes == null)
             {
-                Dispute = new List<Dispute>();
+                Disputes = new List<Dispute>();
             }
 		}
 	}

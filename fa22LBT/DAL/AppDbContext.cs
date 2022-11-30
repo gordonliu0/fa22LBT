@@ -22,12 +22,20 @@ namespace fa22LBT.DAL
             builder.Entity<StockPortfolio>()
             .Property<String>("AppUserForeignKey");
 
+            builder.Entity<StockPortfolio>()
+            .Property<String>("BankAccountForeignKey");
+
 
             //this code configures the 1:1 relationship between AppUser and StockPortfolio
             builder.Entity<AppUser>()
             .HasOne(sp => sp.StockPortfolio)
             .WithOne(u => u.AppUser)
             .HasForeignKey<StockPortfolio>("AppUserForeignKey");
+
+            builder.Entity<BankAccount>()
+            .HasOne(ba => ba.StockPortfolio)
+            .WithOne(u => u.BankAccount)
+            .HasForeignKey<StockPortfolio>("BankAccountForeignKey");
 
             base.OnModelCreating(builder);
         }
@@ -39,5 +47,6 @@ namespace fa22LBT.DAL
         public DbSet<StockTransaction> StockTransactions { get; set; }
         public DbSet<StockType> StockTypes { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<StockHolding> StockHoldings { get; set; }
     }
 }

@@ -13,13 +13,34 @@ namespace fa22LBT.Models
         [Display(Name = "Quantity of Shares")]
         public Int32 QuantityShares { get; set; }
 
+        [Display(Name = "Transaction Number")]
+        public Int32 STransactionNo { get; set; }
+
         [Display(Name = "Stock Price at Purchase")]
         [DisplayFormat(DataFormatString = "{0:c}")]
         public Decimal PricePerShare { get; set; }
 
         [Display(Name = "Transaction Date")]
         [DisplayFormat(DataFormatString = "{0:MM/dd/yyyy}")]
-        public DateTime OrderDate { get; set; }
+        [DataType(DataType.Date)]
+        public DateTime OrderDate { get; set; } = DateTime.Now;
+
+        // CALCULATED PROPERTIES
+        [Display(Name = "Total Value")]
+        [DisplayFormat(DataFormatString = "{0:c}")]
+        public Decimal InitialValue { get { return this.QuantityShares * this.PricePerShare; } }
+
+        [Display(Name = "Total Value")]
+        [DisplayFormat(DataFormatString = "{0:c}")]
+        public Decimal CurrentValue { get
+            {
+                if (this.Stock != null)
+                {
+                    return this.QuantityShares * this.Stock.StockPrice;
+                }
+                return this.PricePerShare;
+            }
+        }
 
         // NAVIGATIONAL PROPERTIES
 
