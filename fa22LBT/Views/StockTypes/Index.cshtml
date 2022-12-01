@@ -15,7 +15,6 @@
             <th>
                 @Html.DisplayNameFor(model => model.StockTypeName)
             </th>
-            <th></th>
         </tr>
     </thead>
     <tbody>
@@ -23,11 +22,6 @@
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.StockTypeName)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.StockTypeID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.StockTypeID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.StockTypeID">Delete</a>
             </td>
         </tr>
 }
