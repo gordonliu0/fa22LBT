@@ -4,11 +4,11 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>Search Results</h1>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
+<p>Displaying @ViewBag.SelectedRepositories of @ViewBag.AllRepositories Transactions</p>
+<p> @ViewBag.Message</p>
+
 <table class="table">
     <thead>
         <tr>
@@ -19,22 +19,13 @@
                 @Html.DisplayNameFor(model => model.TransactionType)
             </th>
             <th>
+                @Html.DisplayNameFor(model => model.TransactionComments)
+            </th>
+            <th>
                 @Html.DisplayNameFor(model => model.TransactionAmount)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.OrderDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.TransactionApproved)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.TransactionComments)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ToAccount)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FromAccount)
             </th>
             <th></th>
         </tr>
@@ -49,27 +40,16 @@
                 @Html.DisplayFor(modelItem => item.TransactionType)
             </td>
             <td>
+                @Html.DisplayFor(modelItem => item.TransactionComments)
+            </td>
+            <td>
                 @Html.DisplayFor(modelItem => item.TransactionAmount)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.OrderDate)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.TransactionApproved)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.TransactionComments)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ToAccount)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.FromAccount)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.TransactionID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.TransactionID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.TransactionID">Delete</a>
+                <a asp-action="Details" asp-route-id="@item.TransactionID">Details</a>
             </td>
         </tr>
 }

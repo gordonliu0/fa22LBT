@@ -1,0 +1,95 @@
+﻿@model fa22LBT.Models.ViewModels.SearchViewModel
+
+@{
+    ViewData["Title"] = "DetailedSearch";
+}
+
+<h1>Detailed Transaction Search</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="DisplaySearchResults" asp-route-id="@ViewBag.ID">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="SearchDescription" class="control-label"></label>
+                <input asp-for="SearchDescription" class="form-control" />
+                <span asp-validation-for="SearchDescription" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SearchType" class="control-label"></label>
+                <select asp-for="SearchType" asp-items="Html.GetEnumSelectList<TransactionType>()" class="form-control">
+                    <option selected="selected" value="">All Types</option>
+                </select>
+                <span asp-validation-for="SearchType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SearchAmountUpper" class="control-label"></label>
+                <input asp-for="SearchAmountUpper" class="form-control" />
+                <span asp-validation-for="SearchAmountUpper" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SearchAmountLower" class="control-label"></label>
+                <input asp-for="SearchAmountLower" class="form-control" />
+                <span asp-validation-for="SearchAmountLower" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SearchTNumber" class="control-label"></label>
+                <input asp-for="SearchTNumber" class="form-control" />
+                <span asp-validation-for="SearchTNumber" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SearchDateFrom" class="control-label"></label>
+                <input asp-for="SearchDateFrom" class="form-control" />
+                <span asp-validation-for="SearchDateFrom" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SearchDateTo" class="control-label"></label>
+                <input asp-for="SearchDateTo" class="form-control" />
+                <span asp-validation-for="SearchDateTo" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SearchOrderBy" class="control-label"></label>
+                <select asp-for="SearchOrderBy" asp-items="Html.GetEnumSelectList<SearchOrderBy>()" class="form-control">
+                </select>
+                <span asp-validation-for="SearchOrderBy" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Ascending" class="control-label"></label>
+                <input class="form-check-input" asp-for="Ascending" />
+            </div>
+            
+
+            @*
+                    <div class="form-group">
+            <label asp-for="SearchLanguage" class="control-label"></label>
+            @Html.DropDownListFor(model => model.SearchLanguage, (SelectList)ViewBag.AllLanguages, new { @class = "form-control" })
+        </div>
+            *@
+            @*
+        <div class="form-group">
+            <label asp-for="SearchStarCount" class="control-label"></label>
+            <input asp-for="SearchStarCount" type="number" step="0.1" class="form-control" />
+            <span asp-validation-for="SearchStarCount" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <input type="radio" class="radio" asp-for="StarSearchType" value="StarSearchTypes.GreaterThan" checked="checked" /> Greater Than<br />
+            <input type="radio" class="radio" asp-for="StarSearchType" value="StarSearchTypes.LessThan" /> Less than<br />
+        </div>
+        <div class="form-group">
+            <label asp-for="UpdatedAfter" class="control-label"></label>
+            <input asp-for="UpdatedAfter" class="form-control" />
+            <span asp-validation-for="UpdatedAfter" class="text-danger"></span>
+        </div>
+            *@
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+

@@ -4,6 +4,8 @@ using System.Xml.Linq;
 
 namespace fa22LBT.Models
 {
+
+    public enum SearchOrderBy { num, type, description, amount, date }
     public enum TransactionType { Deposit, Withdraw, Transfer, Fee, Bonus }
 
 	public class Transaction

@@ -7,12 +7,16 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Authorization;
+
 using fa22LBT.DAL;
 using fa22LBT.Models;
 using fa22LBT.Utilities;
+using fa22LBT.Models.ViewModels;
 
 namespace fa22LBT.Controllers
 {
+    [Authorize]
     public class TransactionsController : Controller
     {
         private readonly AppDbContext _context;
@@ -31,6 +35,116 @@ namespace fa22LBT.Controllers
             return monthSelectList;
         }
 
+        public ActionResult DetailedSearch(string id)
+        {
+            ViewBag.ID = id;
+            return View();
+        }
+
+        public ActionResult DisplaySearchResults(SearchViewModel searchViewModel, string id)
+        {
+            // create LINQ query
+            var query = from r in _context.Transactions.Where(m => m.BankAccount.AccountID == id)
+                        select r;
+            
+            // FILTER
+            if (searchViewModel.SearchDescription != null)
+            {
+                query = query.Where(r => r.TransactionComments.Contains(searchViewModel.SearchDescription));
+            }
+
+            if (searchViewModel.SearchType != null)
+            {
+                query = query.Where(r => r.TransactionType.Equals(searchViewModel.SearchType));
+            }
+
+            if (searchViewModel.SearchAmountLower != null)
+            {
+                query = query.Where(r => r.TransactionAmount >= searchViewModel.SearchAmountLower);
+            }
+
+            if (searchViewModel.SearchAmountUpper != null)
+            {
+                query = query.Where(r => r.TransactionAmount <= searchViewModel.SearchAmountUpper);
+            }
+
+            if (searchViewModel.SearchTNumber != null)
+            {
+                query = query.Where(r => r.TransactionNumber.Equals(searchViewModel.SearchTNumber));
+            }
+
+            if (searchViewModel.SearchDateFrom != null)
+            {
+                query = query.Where(r => r.OrderDate >= searchViewModel.SearchDateFrom);
+            }
+
+            if (searchViewModel.SearchDateTo != null)
+            {
+                query = query.Where(r => r.OrderDate <= searchViewModel.SearchDateTo);
+            }
+
+            // TODO: NEED TO FILL IN SEARCH LANGUAGE
+
+            //Convert query into list with type Repository
+            List<Transaction> SelectedTransactions = query.ToList();
+
+            //Populate the view bag with a count of all repositories 
+            ViewBag.AllRepositories = _context.Transactions.Where(m => m.BankAccount.AccountID == id).Count();
+
+            //Populate the view bag with a count of selected repositories 
+            ViewBag.SelectedRepositories = SelectedTransactions.Count;
+
+            // ORDER, ASCENDING, TYPE
+            if (searchViewModel.Ascending)
+            {
+                if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.num)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderBy(r => r.TransactionNumber).ToList();
+                }
+                else if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.type)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderBy(r => r.TransactionType).ToList();
+                }
+                else if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.description)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderBy(r => r.TransactionComments).ToList();
+                }
+                else if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.amount)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderBy(r => r.TransactionAmount).ToList();
+                }
+                else if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.date)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderBy(r => r.OrderDate).ToList();
+                }
+            }
+            else
+            {
+                if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.num)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderByDescending(r => r.TransactionNumber).ToList();
+                }
+                else if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.type)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderByDescending(r => r.TransactionType).ToList();
+                }
+                else if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.description)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderByDescending(r => r.TransactionComments).ToList();
+                }
+                else if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.amount)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderByDescending(r => r.TransactionAmount).ToList();
+                }
+                else if (searchViewModel.SearchOrderBy.Value == SearchOrderBy.date)
+                {
+                    SelectedTransactions = SelectedTransactions.OrderByDescending(r => r.OrderDate).ToList();
+                }
+            }
+
+            return View("Index", SelectedTransactions);
+        }
+
         public TransactionsController(AppDbContext context, UserManager<AppUser> userManager)
         {
             _context = context;
@@ -38,11 +152,24 @@ namespace fa22LBT.Controllers
         }
 
         // GET: Transactions
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? id)
         {
-              return _context.Transactions != null ? 
-                          View(await _context.Transactions.ToListAsync()) :
-                          Problem("Entity set 'AppDbContext.Transactions'  is null.");
+            AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+            ViewBag.ID = id;
+            List<Transaction> t = _context.Transactions.Where(t => t.BankAccount.Customer == userLoggedIn).ToList();
+            ViewBag.Message = "Showing Transactions from all your Bank Accounts.";
+            if (id != null)
+            {
+                BankAccount dbBankAccount = _context.BankAccounts.FirstOrDefault(ba => ba.AccountID == id);
+                t = _context.Transactions.Where(t => t.BankAccount.AccountID == id).ToList();
+                ViewBag.Message = "Showing Transactions from Bank Account: [" + dbBankAccount.HiddenAccountNo.ToString() + "] " + dbBankAccount.AccountName;
+            }
+            ViewBag.AllRepositories = t.Count();
+            ViewBag.SelectedRepositories = t.Count;
+
+            return _context.Transactions != null ? 
+                View(t) :
+                Problem("Entity set 'AppDbContext.Transactions'  is null.");
         }
 
         public async Task<IActionResult> ManageDeposits()
