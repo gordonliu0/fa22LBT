@@ -92,9 +92,7 @@
                     @Html.DisplayFor(modelItem => item.TransactionComments)
                 </td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.TransactionID">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.TransactionID">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@item.TransactionID">Delete</a>
+                    <a asp-controller="Transactions" asp-action="Details" asp-route-id="@item.TransactionID">Details</a>
                 </td>
             </tr>
         }
@@ -103,6 +101,5 @@
 
 
 <div>
-    <a asp-action="Edit" asp-route-id="@Model?.AccountID">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <a asp-controller="BankAccounts" asp-action="">Back To Bank Accounts</a>
 </div>

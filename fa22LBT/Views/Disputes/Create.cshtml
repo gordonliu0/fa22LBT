@@ -13,6 +13,11 @@
         <form asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
+                <input type="hidden" asp-for="DisputeID" class="form-control" />
+                <input type="hidden" asp-for="DisputeTransaction.TransactionID" class="form-control" />
+                <input type="hidden" name="transactionID" id="transactionID" class="form-control" value="@Model.DisputeTransaction.TransactionID"/>
+            </div>
+            <div class="form-group">
                 <label asp-for="DisputeDescription" class="control-label"></label>
                 <input asp-for="DisputeDescription" class="form-control" />
                 <span asp-validation-for="DisputeDescription" class="text-danger"></span>
@@ -21,11 +26,6 @@
                 <label asp-for="CorrectAmount" class="control-label"></label>
                 <input asp-for="CorrectAmount" class="form-control" />
                 <span asp-validation-for="CorrectAmount" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="DisputeStatus" class="control-label"></label>
-                <select asp-for="DisputeStatus" class="form-control"></select>
-                <span asp-validation-for="DisputeStatus" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />

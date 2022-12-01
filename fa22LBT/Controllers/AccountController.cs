@@ -6,6 +6,7 @@ using fa22LBT.DAL;
 using fa22LBT.Models;
 using fa22LBT.Utilities;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace fa22LBT.Controllers
 {
@@ -31,6 +32,26 @@ namespace fa22LBT.Controllers
         public IActionResult Register()
         {
             return View();
+        }
+
+        public async Task<IActionResult> AllCustomers()
+        {
+            //this is a list of all the users who ARE in this role (members)
+            List<AppUser> RoleMembers = new List<AppUser>();
+
+            //loop through ALL the users and decide if they are in the role(member) or not (non-member)
+            //every user will be evaluated for every role, so this is a SLOW chunk of code because
+            //it accesses the database so many times
+            foreach (AppUser user in _userManager.Users)
+            {
+                if (await _userManager.IsInRoleAsync(user, "Customer") == true) //user is in the role
+                {
+                    //add user to list of members
+                    RoleMembers.Add(user);
+                }
+            }
+
+            return View(RoleMembers);
         }
 
         // POST: /Account/Register
@@ -147,13 +168,26 @@ namespace fa22LBT.Controllers
         }
 
         //GET: Account/Index
-        public IActionResult Index()
+        public IActionResult Index(string? id)
         {
             IndexViewModel ivm = new IndexViewModel();
+            if (id == null)
+            {
+                id = User.Identity.Name;
+            } else
+            {
+                if (!(User.IsInRole("Admin") || User.IsInRole("Employee")) && id != User.Identity.Name)
+                {
+                    return View("Error", new string[] { "You are not authorized to view this account detail." });
+                }
+            }
 
-            //get user info
-            String id = User.Identity.Name;
             AppUser user = _context.Users.FirstOrDefault(u => u.UserName == id);
+
+            if (user == null)
+            {
+                return View("Error", new string[] { "This account was not found." });
+            }
 
             //populate the view model
             //(i.e. map the domain model to the view model)
@@ -165,6 +199,7 @@ namespace fa22LBT.Controllers
             ivm.FullName = user.FullName;
             ivm.FullAddress = user.FullAddress;
             ivm.Age = user.Age;
+            ivm.IsActive = user.IsActive;
 
             //send data to the view
             return View(ivm);
@@ -173,6 +208,34 @@ namespace fa22LBT.Controllers
         public async Task<ActionResult> Edit(string id)
         {
             var UserAccount = await _userManager.FindByEmailAsync(id);
+
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
+            // If CurrentUser is a customer and attempts to change anybody else's account, not allowed
+            if (!User.IsInRole("Admin") && !User.IsInRole("Employee") && User.Identity.Name != UserAccount.UserName)
+            {
+                return View("Error", new string[] { "You are not authorized to change this account!" });
+            }
+
+            // IF currentuser is an employee and attempts to change another employee, not allowed
+            if (await _userManager.IsInRoleAsync(UserAccount, "Employee") && User.IsInRole("Employee") && User.Identity.Name != UserAccount.UserName)
+            {
+                return View("Error", new string[] { "You are not authorized to change this account!" });
+            }
+
+            // IF currentuser an employee and attempts to change an admin, not allowed
+            if (await _userManager.IsInRoleAsync(UserAccount, "Admin") && User.IsInRole("Employee") && User.Identity.Name != UserAccount.UserName)
+            {
+                return View("Error", new string[] { "You are not authorized to change this account!" });
+            }
+
             var euvm = new EditUserViewModel();
             euvm.Email = id;
             euvm.FirstName = UserAccount.FirstName;
@@ -187,6 +250,11 @@ namespace fa22LBT.Controllers
             if (euvm == null)
             {
                 return NotFound();
+            }
+
+            if (User.IsInRole("Employee") && User.Identity.Name == UserAccount.UserName)
+            {
+                return View("EditEmployeeSelf", euvm);
             }
 
             return View(euvm);
@@ -233,10 +301,35 @@ namespace fa22LBT.Controllers
             return View("Index");
         }
 
+        [Authorize(Roles = "Admin,Employee")]
+        public async Task<ActionResult> Toggle(string id)
+        {
+            AppUser userLoggedIn = await _userManager.FindByNameAsync(id);
+            userLoggedIn.IsActive = !userLoggedIn.IsActive;
+            _context.Update(userLoggedIn);
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Index", "Account", new { id = id } );
+        }
+
         //Logic for change password
         // GET: /Account/ChangePassword
-        public ActionResult ChangePassword()
+        public async Task<ActionResult> ChangePassword()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
+            return View();
+        }
+
+        public ActionResult ChangePasswordEmployee(string id)
+        {
+            ViewBag.id = id;
             return View();
         }
 
@@ -264,6 +357,41 @@ namespace fa22LBT.Controllers
                 //sign in the user with the new password
                 await _signInManager.SignInAsync(userLoggedIn, isPersistent: false);
 
+                //send the user back to the home page
+                return RedirectToAction("Index", "Home");
+            }
+            else //attempt to change the password didn't work
+            {
+                //Add all the errors from the result to the model state
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+
+                //send the user back to the change password page to try again
+                return View(cpvm);
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ChangePasswordEmployee(ChangePasswordViewModel cpvm, string id)
+        {
+            //if user forgot a field, send them back to 
+            //change password page to try again
+
+            //Find the logged in user using the UserManager
+            AppUser userLoggedIn = await _userManager.FindByNameAsync(id);
+
+            //Attempt to change the password using the UserManager
+            var token = await _userManager.GeneratePasswordResetTokenAsync(userLoggedIn);
+
+            var result = await _userManager.ResetPasswordAsync(userLoggedIn, token, cpvm.NewPassword);
+
+
+            //if the attempt to change the password worked
+            if (result.Succeeded)
+            {
                 //send the user back to the home page
                 return RedirectToAction("Index", "Home");
             }

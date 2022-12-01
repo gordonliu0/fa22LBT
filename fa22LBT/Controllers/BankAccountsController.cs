@@ -24,11 +24,28 @@ namespace fa22LBT.Controllers
         }
 
         // GET: BankAccounts
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? id)
         {
-              return _context.BankAccounts != null ? 
-                          View(await _context.BankAccounts.Include(m => m.StockPortfolio).ToListAsync()) :
-                          Problem("Entity set 'AppDbContext.BankAccounts'  is null.");
+
+            if (id == null)
+            {
+                List<BankAccount> bankAccounts = _context.BankAccounts
+                    .Include(ba => ba.StockPortfolio)
+                    .Where(ba => ba.Customer.UserName == User.Identity.Name).ToList();
+                return View(bankAccounts);
+            }
+            else if (User.IsInRole("Customer") && User.Identity.Name != id)
+            {
+                return View("Error", new string[] { "Access Denied" });
+            }
+            else
+            {
+                List<BankAccount> bankAccounts = _context.BankAccounts
+                    .Include(ba => ba.StockPortfolio)
+                    .Where(ba => ba.Customer.UserName == id).ToList();
+                return View(bankAccounts);
+            }
+              
         }
 
         // GET: BankAccounts/Details/5
@@ -55,6 +72,15 @@ namespace fa22LBT.Controllers
         // GET: BankAccounts/Create
         public async Task<IActionResult> Create()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
             BankAccount bankAccount = new BankAccount();
             bankAccount.Customer = await _userManager.FindByNameAsync(User.Identity.Name);
             return View(bankAccount);
@@ -101,6 +127,15 @@ namespace fa22LBT.Controllers
         // GET: BankAccounts/Edit/5
         public async Task<IActionResult> Edit(string id)
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
             if (id == null || _context.BankAccounts == null)
             {
                 return NotFound();

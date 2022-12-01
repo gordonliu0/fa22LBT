@@ -1,0 +1,103 @@
+@model fa22LBT.Models.StockPortfolio
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Sell Stock</h1>
+<h4>Transaction Fee: $15</h4>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Stock Name
+            </th>
+            <th>
+                Quantity of Shares Owned
+            </th>
+            <th>
+                Current Value
+            </th>
+            <th>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (StockHolding item in Model.StockHoldings)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Stock.StockName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.QuantityShares)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TotalValue)
+                </td>
+                <td>
+                    <a asp-controller="StockHoldings" asp-action="Sell" asp-route-id="@item.StockHoldingID">Sell</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Transaction Number
+            </th>
+            <th>
+                Stock Name
+            </th>
+            <th>
+                Purchase Date
+            </th>
+            <th>
+                Purchase Price
+            </th>
+            <th>
+                Purchase Quantity
+            </th>
+            <th>
+                Total Value at Purchase
+            </th>
+            <th>
+                Current Value
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (StockTransaction item in Model.StockTransactions)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.STransactionNo)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Stock.StockName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.OrderDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PricePerShare)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.QuantityShares)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.InitialValue)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CurrentValue)
+                </td>
+            </tr>
+        }
+    </tbody>
+
+    <div>
+        <a asp-controller="StockPortfolios" asp-action="Details" asp-route-id="@Model.AccountID">Back to Stock Portfolio</a>
+    </div>

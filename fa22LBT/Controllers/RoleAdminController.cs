@@ -8,7 +8,7 @@ using fa22LBT.Models;
 namespace fa22LBT.Controllers
 {
     //TODO: Uncomment this line once you have roles working correctly
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public class RoleAdminController : Controller
     {
         //create private variables for the services needed in this controller

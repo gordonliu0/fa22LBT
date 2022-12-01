@@ -1,0 +1,34 @@
+@model fa22LBT.Models.Dispute
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Dispute</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="AdjustDispute">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @Html.HiddenFor(model => model.DisputeID)
+            @Html.HiddenFor(model => model.AdminComments)
+            @Html.HiddenFor(model => model.AdminEmail)
+
+            <div class="form-group">
+                <label asp-for="CorrectAmount" class="control-label"></label>
+                <input asp-for="CorrectAmount" class="form-control" />
+                <span asp-validation-for="CorrectAmount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+

@@ -38,7 +38,7 @@ namespace fa22LBT.Models
         [DisplayFormat(ApplyFormatInEditMode = true, DataFormatString = "{0:MM/dd/yyyy}")]
         public DateTime DOB { get; set; }
 
-        [Display(Name = "User Status")]
+        [Display(Name = "User Enabled")]
         public Boolean IsActive { get; set; }
 
         // CALCULATED PROPERTIES

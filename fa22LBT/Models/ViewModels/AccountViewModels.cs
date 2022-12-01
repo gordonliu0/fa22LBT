@@ -164,5 +164,6 @@ namespace fa22LBT.Models
         public String FullAddress { get; set; }
         public String PhoneNumber { get; set; }
         public Int32 Age { get; set; }
+        public Boolean IsActive { get; set; }
     }
 }

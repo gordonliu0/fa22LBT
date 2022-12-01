@@ -1,0 +1,16 @@
+﻿@model fa22LBT.Models.StockHolding
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+@ViewBag.Message
+</div>
+
+
+<div>
+    <a asp-controller="StockPortfolios" asp-action="Details" asp-route-id="@Model.StockPortfolio.AccountID">Back to Stock Portfolio</a>
+</div>

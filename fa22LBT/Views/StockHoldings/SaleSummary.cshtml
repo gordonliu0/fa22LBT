@@ -1,0 +1,50 @@
+﻿@model fa22LBT.Models.StockHolding
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>StockHolding</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Stock.StockName)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Stock.StockName)
+        </dd>
+        <dt class="col-sm-2">
+            Number Sold:
+        </dt>
+        <dd class="col-sm-10">
+            @ViewBag.NumberSold
+        </dd>
+        <dt class="col-sm-2">
+            Number Remaining:
+        </dt>
+        <dd class="col-sm-10">
+            @ViewBag.NumberRemaining
+        </dd>
+        <dt class="col-sm-2">
+            Fees
+        </dt>
+        <dd class="col-sm-10">
+            $15 Stock Sale Fee
+        </dd>
+        <dt class="col-sm-2">
+            Net Profit/Loss
+        </dt>
+        <dd class="col-sm-10">
+            @ViewBag.NetProfitLoss
+        </dd>
+    </dl>
+</div>
+
+
+<div>
+    <a asp-controller="StockHoldings" asp-action="FinishSale" asp-route-numSold="@ViewBag.NumberSold" asp-route-id="@Model.StockHoldingID" asp-route-dateTime="@ViewBag.DateTime">Accept</a>
+    <a asp-controller="StockPortfolios" asp-action="SaleDetails" asp-route-id="@Model.StockPortfolio.AccountID">Cancel</a>
+</div>

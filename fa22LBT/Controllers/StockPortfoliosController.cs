@@ -55,9 +55,43 @@ namespace fa22LBT.Controllers
             return View(stockPortfolio);
         }
 
+        // GET: StockPortfolios/SaleDetails/5
+        public async Task<IActionResult> SaleDetails(string id)
+        {
+            if (id == null || _context.StockPortfolios == null)
+            {
+                return NotFound();
+            }
+
+            var stockPortfolio = await _context.StockPortfolios
+                .Include(m => m.StockHoldings)
+                .ThenInclude(sh => sh.Stock)
+                .Include(m => m.StockTransactions)
+                .ThenInclude(st => st.Stock)
+                .Include(m => m.BankAccount)
+                .ThenInclude(ba => ba.Transactions)
+                .FirstOrDefaultAsync(m => m.AccountID == id);
+
+            if (stockPortfolio == null)
+            {
+                return NotFound();
+            }
+
+            return View(stockPortfolio);
+        }
+
         // GET: StockPortfolios/Create
         public async Task<IActionResult> Create()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
             StockPortfolio stockPortfolio = new StockPortfolio();
             stockPortfolio.AppUser = await _userManager.FindByNameAsync(User.Identity.Name);
             return View(stockPortfolio);
@@ -95,93 +129,93 @@ namespace fa22LBT.Controllers
             return RedirectToAction("InitialDepositStockPortfolio", "Transactions", new { SelectedBankAccount = cashAccount.AccountID, AccountBalance = AccountBalance});
         }
 
-        // GET: StockPortfolios/Edit/5
-        public async Task<IActionResult> Edit(string id)
-        {
-            if (id == null || _context.StockPortfolios == null)
-            {
-                return NotFound();
-            }
+        //// GET: StockPortfolios/Edit/5
+        //public async Task<IActionResult> Edit(string id)
+        //{
+        //    if (id == null || _context.StockPortfolios == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            var stockPortfolio = await _context.StockPortfolios.FindAsync(id);
-            if (stockPortfolio == null)
-            {
-                return NotFound();
-            }
-            return View(stockPortfolio);
-        }
+        //    var stockPortfolio = await _context.StockPortfolios.FindAsync(id);
+        //    if (stockPortfolio == null)
+        //    {
+        //        return NotFound();
+        //    }
+        //    return View(stockPortfolio);
+        //}
 
-        // POST: StockPortfolios/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, [Bind("AccountID,AccountNo,AccountName,CashBalance,IsBalanced,IsApproved")] StockPortfolio stockPortfolio)
-        {
-            if (id != stockPortfolio.AccountID)
-            {
-                return NotFound();
-            }
+        //// POST: StockPortfolios/Edit/5
+        //// To protect from overposting attacks, enable the specific properties you want to bind to.
+        //// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Edit(string id, [Bind("AccountID,AccountNo,AccountName,CashBalance,IsBalanced,IsApproved")] StockPortfolio stockPortfolio)
+        //{
+        //    if (id != stockPortfolio.AccountID)
+        //    {
+        //        return NotFound();
+        //    }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(stockPortfolio);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!StockPortfolioExists(stockPortfolio.AccountID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(stockPortfolio);
-        }
+        //    if (ModelState.IsValid)
+        //    {
+        //        try
+        //        {
+        //            _context.Update(stockPortfolio);
+        //            await _context.SaveChangesAsync();
+        //        }
+        //        catch (DbUpdateConcurrencyException)
+        //        {
+        //            if (!StockPortfolioExists(stockPortfolio.AccountID))
+        //            {
+        //                return NotFound();
+        //            }
+        //            else
+        //            {
+        //                throw;
+        //            }
+        //        }
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    return View(stockPortfolio);
+        //}
 
         // GET: StockPortfolios/Delete/5
-        public async Task<IActionResult> Delete(string id)
-        {
-            if (id == null || _context.StockPortfolios == null)
-            {
-                return NotFound();
-            }
+        //public async Task<IActionResult> Delete(string id)
+        //{
+        //    if (id == null || _context.StockPortfolios == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            var stockPortfolio = await _context.StockPortfolios
-                .FirstOrDefaultAsync(m => m.AccountID == id);
-            if (stockPortfolio == null)
-            {
-                return NotFound();
-            }
+        //    var stockPortfolio = await _context.StockPortfolios
+        //        .FirstOrDefaultAsync(m => m.AccountID == id);
+        //    if (stockPortfolio == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            return View(stockPortfolio);
-        }
+        //    return View(stockPortfolio);
+        //}
 
-        // POST: StockPortfolios/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(string id)
-        {
-            if (_context.StockPortfolios == null)
-            {
-                return Problem("Entity set 'AppDbContext.StockPortfolios'  is null.");
-            }
-            var stockPortfolio = await _context.StockPortfolios.FindAsync(id);
-            if (stockPortfolio != null)
-            {
-                _context.StockPortfolios.Remove(stockPortfolio);
-            }
+        //// POST: StockPortfolios/Delete/5
+        //[HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteConfirmed(string id)
+        //{
+        //    if (_context.StockPortfolios == null)
+        //    {
+        //        return Problem("Entity set 'AppDbContext.StockPortfolios'  is null.");
+        //    }
+        //    var stockPortfolio = await _context.StockPortfolios.FindAsync(id);
+        //    if (stockPortfolio != null)
+        //    {
+        //        _context.StockPortfolios.Remove(stockPortfolio);
+        //    }
             
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+        //    await _context.SaveChangesAsync();
+        //    return RedirectToAction(nameof(Index));
+        //}
 
         private bool StockPortfolioExists(string id)
         {

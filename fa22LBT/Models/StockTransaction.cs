@@ -42,6 +42,20 @@ namespace fa22LBT.Models
             }
         }
 
+        [Display(Name = "Difference in share price (+ is gain, - is loss)")]
+        [DisplayFormat(DataFormatString = "{0:c}")]
+        public Decimal StockPriceDifference
+        {
+            get
+            {
+                if (this.Stock != null)
+                {
+                    return this.Stock.StockPrice - this.PricePerShare;
+                }
+                return this.PricePerShare;
+            }
+        }
+
         // NAVIGATIONAL PROPERTIES
 
         [Display(Name = "Stock Portfolio Account")]

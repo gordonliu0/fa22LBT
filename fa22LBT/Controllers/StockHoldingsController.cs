@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using fa22LBT.DAL;
 using fa22LBT.Models;
@@ -14,6 +15,13 @@ namespace fa22LBT.Controllers
     public class StockHoldingsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly UserManager<AppUser> _userManager;
+
+        public StockHoldingsController(AppDbContext context, UserManager<AppUser> userManager)
+        {
+            _context = context;
+            _userManager = userManager;
+        }
 
         public StockHoldingsController(AppDbContext context)
         {
@@ -23,9 +31,9 @@ namespace fa22LBT.Controllers
         // GET: StockHoldings
         public async Task<IActionResult> Index()
         {
-              return _context.StockHoldings != null ? 
-                          View(await _context.StockHoldings.ToListAsync()) :
-                          Problem("Entity set 'AppDbContext.StockHoldings'  is null.");
+            return _context.StockHoldings != null ?
+                        View(await _context.StockHoldings.ToListAsync()) :
+                        Problem("Entity set 'AppDbContext.StockHoldings'  is null.");
         }
 
         // GET: StockHoldings/Details/5
@@ -46,31 +54,40 @@ namespace fa22LBT.Controllers
             return View(stockHolding);
         }
 
-        // GET: StockHoldings/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
+        //// GET: StockHoldings/Create
+        //public IActionResult Create()
+        //{
+        //    return View();
+        //}
 
-        // POST: StockHoldings/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("StockHoldingID,QuantityShares")] StockHolding stockHolding)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(stockHolding);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(stockHolding);
-        }
+        //// POST: StockHoldings/Create
+        //// To protect from overposting attacks, enable the specific properties you want to bind to.
+        //// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Create([Bind("StockHoldingID,QuantityShares")] StockHolding stockHolding)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        _context.Add(stockHolding);
+        //        await _context.SaveChangesAsync();
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    return View(stockHolding);
+        //}
 
         // GET: StockHoldings/Sell/5
         public async Task<IActionResult> Sell(int? id)
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
             if (id == null || _context.StockHoldings == null)
             {
                 return NotFound();
@@ -89,7 +106,7 @@ namespace fa22LBT.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Sell(int id, [Bind("StockHoldingID,QuantityShares")] StockHolding stockHolding, int numSold)
+        public async Task<IActionResult> Sell(int id, [Bind("StockHoldingID,QuantityShares")] StockHolding stockHolding, int numSold, DateTime dateTime)
         {
             StockHolding dbStockHolding = _context.StockHoldings.Include(sh => sh.Stock).FirstOrDefault(sh => sh.StockHoldingID == id);
             Stock dbStock = _context.Stocks.Include(sh => sh.StockTransactions).FirstOrDefault(sh => sh.StockID == dbStockHolding.Stock.StockID);
@@ -101,6 +118,32 @@ namespace fa22LBT.Controllers
                 orderby st.StockTransactionID
                 select st.StockTransactionID;
             numSold = stockHolding.QuantityShares;
+            int numNeedSold = numSold;
+            decimal netProfitLoss = 0;
+            foreach (int stID in relevantStockTransactions)
+            {
+                StockTransaction dbStockTransaction = _context.StockTransactions.Include(st => st.Stock).FirstOrDefault(st => st.StockTransactionID == stID);
+                if (numNeedSold > 0 && numNeedSold >= dbStockTransaction.QuantityShares)
+                {
+                    if (dateTime < dbStockTransaction.OrderDate)
+                    {
+                        ViewBag.Message = "Stock Transaction #" + dbStockTransaction.STransactionNo + " was purchased on " + dbStockTransaction.OrderDate.ToShortDateString() + ". Please enter a sale date after this day.";
+                        return View(dbStockHolding);
+                    }
+                    netProfitLoss += dbStockTransaction.QuantityShares * dbStockTransaction.Stock.StockPrice - dbStockTransaction.InitialValue;
+                    numNeedSold -= dbStockTransaction.QuantityShares;
+                }
+                else if (numNeedSold > 0 && numNeedSold < dbStockTransaction.QuantityShares)
+                {
+                    if (dateTime < dbStockTransaction.OrderDate)
+                    {
+                        ViewBag.Message = "Stock Transaction #" + dbStockTransaction.STransactionNo + " was purchased on " + dbStockTransaction.OrderDate.ToShortDateString() + ". Please enter a sale date after this day.";
+                        return View(dbStockHolding);
+                    }
+                    netProfitLoss += numNeedSold * (dbStockTransaction.Stock.StockPrice - dbStockTransaction.PricePerShare);
+                    numNeedSold = 0;
+                }
+            }
 
             if (numSold > dbStockHolding.QuantityShares)
             {
@@ -114,85 +157,190 @@ namespace fa22LBT.Controllers
             }
             else
             {
-                // Update StockHolding (reduce QuantityShares or Remove if 0)
-                dbStockHolding.QuantityShares -= numSold;
-                if (dbStockHolding.QuantityShares == 0)
-                {
-                    _context.StockHoldings.Remove(dbStockHolding);
-                }
-                else
-                {
-                    _context.Update(dbStockHolding);
-                }
+                ViewBag.DateTime = dateTime;
+                ViewBag.NumberSold = numSold;
+                ViewBag.NumberRemaining = dbStockHolding.QuantityShares - numSold;
+                ViewBag.NetProfitLoss = "$" + netProfitLoss.ToString();
+                return View("SaleSummary", dbStockHolding);
+                //// Update StockHolding (reduce QuantityShares or Remove if 0)
+                //dbStockHolding.QuantityShares -= numSold;
+                //if (dbStockHolding.QuantityShares == 0)
+                //{
+                //    _context.StockHoldings.Remove(dbStockHolding);
+                //}
+                //else
+                //{
+                //    _context.Update(dbStockHolding);
+                //}
 
-                // Calculate gain/loss and Update StockTransactions
-                int numNeedSold = numSold;
-                foreach (int stID in relevantStockTransactions)
-                {
-                    // Grab relevantStockTransaction in order of purchase
-                    StockTransaction dbStockTransaction = _context.StockTransactions.Include(st => st.Stock).FirstOrDefault(st => st.StockTransactionID == stID);
+                //// Calculate gain/loss and Update StockTransactions
+                //numNeedSold = numSold;
+                //foreach (int stID in relevantStockTransactions)
+                //{
+                //    // Grab relevantStockTransaction in order of purchase
+                //    StockTransaction dbStockTransaction = _context.StockTransactions.Include(st => st.Stock).FirstOrDefault(st => st.StockTransactionID == stID);
 
-                    // If the number that we want to sell is greater than this transaction's quantity,
-                    // Create Sell Transaction,
-                    if (numNeedSold > 0 && numNeedSold >= dbStockTransaction.QuantityShares)
-                    {
-                        Transaction t = new Transaction();
-                        t.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
-                        t.TransactionType = TransactionType.Deposit;
-                        t.TransactionAmount = dbStockTransaction.QuantityShares * dbStock.StockPrice;
-                        t.TransactionApproved = true;
-                        t.ToAccount = stockPortfolio.BankAccount.AccountNo;
-                        t.BankAccount = dbBankAccount;
-                        Decimal gl = dbStockTransaction.CurrentValue - dbStockTransaction.InitialValue;
-                        t.TransactionComments = dbStockTransaction.QuantityShares.ToString() + " of Stock " + dbStock.StockName + ", Initial Price: $" + dbStockTransaction.PricePerShare.ToString() + ", Current Price: $" + dbStock.StockPrice.ToString() + ", Gains/Losses: $" + gl.ToString();
-                        numNeedSold -= dbStockTransaction.QuantityShares;
-                        _context.StockTransactions.Remove(dbStockTransaction);
-                        _context.Add(t);
-                        await _context.SaveChangesAsync();
-                    } else if (numNeedSold > 0 && numNeedSold < dbStockTransaction.QuantityShares)
-                    {
-                        Transaction t = new Transaction();
-                        t.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
-                        t.TransactionType = TransactionType.Deposit;
-                        t.TransactionAmount = numNeedSold * dbStock.StockPrice;
-                        t.TransactionApproved = true;
-                        t.ToAccount = stockPortfolio.BankAccount.AccountNo;
-                        t.BankAccount = dbBankAccount;
-                        Decimal gl = (dbStock.StockPrice - dbStockTransaction.PricePerShare) * numNeedSold;
-                        t.TransactionComments = numNeedSold.ToString() + " of Stock " + dbStock.StockName + ", Initial Price: $" + dbStockTransaction.PricePerShare.ToString() + ", Current Price: $" + dbStock.StockPrice.ToString() + ", Gains/Losses: $" + gl.ToString();
-                        dbStockTransaction.QuantityShares -= numNeedSold;
-                        numNeedSold = 0;
-                        _context.Update(dbStockTransaction);
-                        _context.Add(t);
-                        await _context.SaveChangesAsync();
-                    }
-                }
+                //    // If the number that we want to sell is greater than this transaction's quantity,
+                //    // Create Sell Transaction,
+                //    if (numNeedSold > 0 && numNeedSold >= dbStockTransaction.QuantityShares)
+                //    {
+                //        Transaction t = new Transaction();
+                //        t.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+                //        t.TransactionType = TransactionType.Deposit;
+                //        t.TransactionAmount = dbStockTransaction.QuantityShares * dbStock.StockPrice;
+                //        t.TransactionApproved = true;
+                //        t.ToAccount = stockPortfolio.BankAccount.AccountNo;
+                //        t.OrderDate = dateTime;
+                //        t.BankAccount = dbBankAccount;
+                //        Decimal gl = dbStockTransaction.CurrentValue - dbStockTransaction.InitialValue;
+                //        t.TransactionComments = dbStockTransaction.QuantityShares.ToString() + " of Stock " + dbStock.StockName + ", Initial Price: $" + dbStockTransaction.PricePerShare.ToString() + ", Current Price: $" + dbStock.StockPrice.ToString() + ", Gains/Losses: $" + gl.ToString();
+                //        numNeedSold -= dbStockTransaction.QuantityShares;
+                //        _context.StockTransactions.Remove(dbStockTransaction);
+                //        _context.Add(t);
+                //        await _context.SaveChangesAsync();
+                //    } else if (numNeedSold > 0 && numNeedSold < dbStockTransaction.QuantityShares)
+                //    {
+                //        Transaction t = new Transaction();
+                //        t.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+                //        t.TransactionType = TransactionType.Deposit;
+                //        t.TransactionAmount = numNeedSold * dbStock.StockPrice;
+                //        t.TransactionApproved = true;
+                //        t.ToAccount = stockPortfolio.BankAccount.AccountNo;
+                //        t.OrderDate = dateTime;
+                //        t.BankAccount = dbBankAccount;
+                //        Decimal gl = (dbStock.StockPrice - dbStockTransaction.PricePerShare) * numNeedSold;
+                //        t.TransactionComments = numNeedSold.ToString() + " of Stock " + dbStock.StockName + ", Initial Price: $" + dbStockTransaction.PricePerShare.ToString() + ", Current Price: $" + dbStock.StockPrice.ToString() + ", Gains/Losses: $" + gl.ToString();
+                //        dbStockTransaction.QuantityShares -= numNeedSold;
+                //        numNeedSold = 0;
+                //        _context.Update(dbStockTransaction);
+                //        _context.Add(t);
+                //        await _context.SaveChangesAsync();
+                //    }
+                //}
 
-                // Add Selling Fee of 15
-                Transaction fee = new Transaction();
-                fee.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
-                fee.TransactionType = TransactionType.Fee;
-                fee.TransactionAmount = 15;
-                fee.TransactionApproved = true;
-                fee.FromAccount = stockPortfolio.BankAccount.AccountNo;
-                fee.BankAccount = dbBankAccount;
-                fee.TransactionComments = "Fee for sale of " + dbStock.StockName;
-                _context.Add(fee);
-                await _context.SaveChangesAsync();
+                //// Add Selling Fee of 15
+                //Transaction fee = new Transaction();
+                //fee.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+                //fee.TransactionType = TransactionType.Fee;
+                //fee.TransactionAmount = 15;
+                //fee.TransactionApproved = true;
+                //fee.FromAccount = stockPortfolio.BankAccount.AccountNo;
+                //fee.BankAccount = dbBankAccount;
+                //fee.TransactionComments = "Fee for sale of " + dbStock.StockName;
+                //fee.OrderDate = dateTime;
+                //_context.Add(fee);
+                //await _context.SaveChangesAsync();
 
-                // Change cash bank account balance
-                dbBankAccount.AccountBalance += numSold * dbStock.StockPrice;
-                _context.Update(dbBankAccount);
+                //// Change cash bank account balance
+                //dbBankAccount.AccountBalance += numSold * dbStock.StockPrice;
+                //_context.Update(dbBankAccount);
 
-                // Recalculate stockPortfolio balanced state
-                stockPortfolio.CalculateBalancedStatus();
-                _context.Update(stockPortfolio);
-                await _context.SaveChangesAsync();
+                //// Recalculate stockPortfolio balanced state
+                //stockPortfolio.CalculateBalancedStatus();
+                //_context.Update(stockPortfolio);
+                //await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Details", "StockPortfolios", new { id = stockPortfolio.AccountID});
+            return RedirectToAction("Details", "StockPortfolios", new { id = stockPortfolio.AccountID });
 
         }
+
+        public async Task<IActionResult> FinishSale(int id, int numSold, DateTime dateTime)
+        {
+            StockHolding dbStockHolding = _context.StockHoldings.Include(sh => sh.Stock).FirstOrDefault(sh => sh.StockHoldingID == id);
+            Stock dbStock = _context.Stocks.Include(sh => sh.StockTransactions).FirstOrDefault(sh => sh.StockID == dbStockHolding.Stock.StockID);
+            StockPortfolio stockPortfolio = _context.StockPortfolios.Include(sp => sp.StockTransactions).ThenInclude(st => st.Stock).Include(sp => sp.BankAccount).Include(sp => sp.StockHoldings).ThenInclude(sh => sh.Stock).ThenInclude(s => s.StockType).FirstOrDefault(o => o.AppUser.UserName == User.Identity.Name);
+            BankAccount dbBankAccount = _context.BankAccounts.FirstOrDefault(ba => ba.AccountID == stockPortfolio.BankAccount.AccountID);
+            IEnumerable<int> relevantStockTransactions =
+                from st in stockPortfolio.StockTransactions
+                where st.Stock.StockID == dbStockHolding.Stock.StockID
+                orderby st.StockTransactionID
+                select st.StockTransactionID;
+            int numNeedSold = numSold;
+            // Update StockHolding (reduce QuantityShares or Remove if 0)
+            dbStockHolding.QuantityShares -= numSold;
+            if (dbStockHolding.QuantityShares == 0)
+            {
+                _context.StockHoldings.Remove(dbStockHolding);
+            }
+            else
+            {
+                _context.Update(dbStockHolding);
+            }
+
+            // Calculate gain/loss and Update StockTransactions
+            numNeedSold = numSold;
+            foreach (int stID in relevantStockTransactions)
+            {
+                // Grab relevantStockTransaction in order of purchase
+                StockTransaction dbStockTransaction = _context.StockTransactions.Include(st => st.Stock).FirstOrDefault(st => st.StockTransactionID == stID);
+
+                // If the number that we want to sell is greater than this transaction's quantity,
+                // Create Sell Transaction,
+                if (numNeedSold > 0 && numNeedSold >= dbStockTransaction.QuantityShares)
+                {
+                    Transaction t = new Transaction();
+                    t.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+                    t.TransactionType = TransactionType.Deposit;
+                    t.TransactionAmount = dbStockTransaction.QuantityShares * dbStock.StockPrice;
+                    t.TransactionApproved = true;
+                    t.ToAccount = stockPortfolio.BankAccount.AccountNo;
+                    t.OrderDate = dateTime;
+                    t.BankAccount = dbBankAccount;
+                    Decimal gl = dbStockTransaction.CurrentValue - dbStockTransaction.InitialValue;
+                    t.TransactionComments = dbStockTransaction.QuantityShares.ToString() + " of Stock " + dbStock.StockName + ", Initial Price: $" + dbStockTransaction.PricePerShare.ToString() + ", Current Price: $" + dbStock.StockPrice.ToString() + ", Gains/Losses: $" + gl.ToString();
+                    numNeedSold -= dbStockTransaction.QuantityShares;
+                    _context.StockTransactions.Remove(dbStockTransaction);
+                    _context.Add(t);
+                    await _context.SaveChangesAsync();
+                }
+                else if (numNeedSold > 0 && numNeedSold < dbStockTransaction.QuantityShares)
+                {
+                    Transaction t = new Transaction();
+                    t.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+                    t.TransactionType = TransactionType.Deposit;
+                    t.TransactionAmount = numNeedSold * dbStock.StockPrice;
+                    t.TransactionApproved = true;
+                    t.ToAccount = stockPortfolio.BankAccount.AccountNo;
+                    t.OrderDate = dateTime;
+                    t.BankAccount = dbBankAccount;
+                    Decimal gl = (dbStock.StockPrice - dbStockTransaction.PricePerShare) * numNeedSold;
+                    t.TransactionComments = numNeedSold.ToString() + " of Stock " + dbStock.StockName + ", Initial Price: $" + dbStockTransaction.PricePerShare.ToString() + ", Current Price: $" + dbStock.StockPrice.ToString() + ", Gains/Losses: $" + gl.ToString();
+                    dbStockTransaction.QuantityShares -= numNeedSold;
+                    numNeedSold = 0;
+                    _context.Update(dbStockTransaction);
+                    _context.Add(t);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // Add Selling Fee of 15
+            Transaction fee = new Transaction();
+            fee.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+            fee.TransactionType = TransactionType.Fee;
+            fee.TransactionAmount = 15;
+            fee.TransactionApproved = true;
+            fee.FromAccount = stockPortfolio.BankAccount.AccountNo;
+            fee.BankAccount = dbBankAccount;
+            fee.TransactionComments = "Fee for sale of " + dbStock.StockName;
+            fee.OrderDate = dateTime;
+            _context.Add(fee);
+            await _context.SaveChangesAsync();
+
+            // Change cash bank account balance
+            dbBankAccount.AccountBalance += numSold * dbStock.StockPrice;
+            _context.Update(dbBankAccount);
+
+            // Recalculate stockPortfolio balanced state
+            stockPortfolio.CalculateBalancedStatus();
+            _context.Update(stockPortfolio);
+            await _context.SaveChangesAsync();
+
+            ViewBag.Message = "Congratulations on your sale of " + numSold + " stocks of " + dbStock.StockName + "!";
+
+            return View("SaleConfirmation", dbStockHolding);
+        }
+
 
         // GET: StockHoldings/Delete/5
         public async Task<IActionResult> Delete(int? id)

@@ -53,6 +53,7 @@ namespace fa22LBT.Controllers
             }
 
             var stockTransaction = await _context.StockTransactions
+                .Include(st => st.Stock)
                 .FirstOrDefaultAsync(m => m.StockTransactionID == id);
             if (stockTransaction == null)
             {
@@ -63,8 +64,17 @@ namespace fa22LBT.Controllers
         }
 
         // GET: StockTransactions/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
             ViewBag.AllStocks = GetAllStocksSelectList();
             StockTransaction t = new StockTransaction();
             return View(t);
@@ -156,93 +166,93 @@ namespace fa22LBT.Controllers
             return View("PurchaseConfirmation", stockTransaction);
         }
 
-        // GET: StockTransactions/Sell/5
-        public async Task<IActionResult> Sell(int? id)
-        {
-            if (id == null || _context.StockTransactions == null)
-            {
-                return NotFound();
-            }
+        //// GET: StockTransactions/Sell/5
+        //public async Task<IActionResult> Sell(int? id)
+        //{
+        //    if (id == null || _context.StockTransactions == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            var stockTransaction = await _context.StockTransactions.FindAsync(id);
-            if (stockTransaction == null)
-            {
-                return NotFound();
-            }
-            return View(stockTransaction);
-        }
+        //    var stockTransaction = await _context.StockTransactions.FindAsync(id);
+        //    if (stockTransaction == null)
+        //    {
+        //        return NotFound();
+        //    }
+        //    return View(stockTransaction);
+        //}
 
-        // POST: StockTransactions/Sell/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Sell(int id, [Bind("StockTransactionID,QuantityShares,PricePerShare,OrderDate")] StockTransaction stockTransaction)
-        {
-            if (id != stockTransaction.StockTransactionID)
-            {
-                return NotFound();
-            }
+        //// POST: StockTransactions/Sell/5
+        //// To protect from overposting attacks, enable the specific properties you want to bind to.
+        //// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Sell(int id, [Bind("StockTransactionID,QuantityShares,PricePerShare,OrderDate")] StockTransaction stockTransaction)
+        //{
+        //    if (id != stockTransaction.StockTransactionID)
+        //    {
+        //        return NotFound();
+        //    }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(stockTransaction);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!StockTransactionExists(stockTransaction.StockTransactionID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(stockTransaction);
-        }
+        //    if (ModelState.IsValid)
+        //    {
+        //        try
+        //        {
+        //            _context.Update(stockTransaction);
+        //            await _context.SaveChangesAsync();
+        //        }
+        //        catch (DbUpdateConcurrencyException)
+        //        {
+        //            if (!StockTransactionExists(stockTransaction.StockTransactionID))
+        //            {
+        //                return NotFound();
+        //            }
+        //            else
+        //            {
+        //                throw;
+        //            }
+        //        }
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    return View(stockTransaction);
+        //}
 
-        // GET: StockTransactions/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null || _context.StockTransactions == null)
-            {
-                return NotFound();
-            }
+        //// GET: StockTransactions/Delete/5
+        //public async Task<IActionResult> Delete(int? id)
+        //{
+        //    if (id == null || _context.StockTransactions == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            var stockTransaction = await _context.StockTransactions
-                .FirstOrDefaultAsync(m => m.StockTransactionID == id);
-            if (stockTransaction == null)
-            {
-                return NotFound();
-            }
+        //    var stockTransaction = await _context.StockTransactions
+        //        .FirstOrDefaultAsync(m => m.StockTransactionID == id);
+        //    if (stockTransaction == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            return View(stockTransaction);
-        }
+        //    return View(stockTransaction);
+        //}
 
-        // POST: StockTransactions/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            if (_context.StockTransactions == null)
-            {
-                return Problem("Entity set 'AppDbContext.StockTransactions'  is null.");
-            }
-            var stockTransaction = await _context.StockTransactions.FindAsync(id);
-            if (stockTransaction != null)
-            {
-                _context.StockTransactions.Remove(stockTransaction);
-            }
+        //// POST: StockTransactions/Delete/5
+        //[HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> DeleteConfirmed(int id)
+        //{
+        //    if (_context.StockTransactions == null)
+        //    {
+        //        return Problem("Entity set 'AppDbContext.StockTransactions'  is null.");
+        //    }
+        //    var stockTransaction = await _context.StockTransactions.FindAsync(id);
+        //    if (stockTransaction != null)
+        //    {
+        //        _context.StockTransactions.Remove(stockTransaction);
+        //    }
             
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+        //    await _context.SaveChangesAsync();
+        //    return RedirectToAction(nameof(Index));
+        //}
 
         private bool StockTransactionExists(int id)
         {

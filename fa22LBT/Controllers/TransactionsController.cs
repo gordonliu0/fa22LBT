@@ -48,13 +48,25 @@ namespace fa22LBT.Controllers
         public async Task<IActionResult> ManageDeposits()
         {
             List<Transaction> transactions = _context.Transactions.Where(o => o.TransactionApproved == false).ToList();
+            if (transactions.Count() == 0)
+            {
+                ViewBag.Message = "Congratulations, you have cleared your deposit request inbox!";
+            }
             return _context.Transactions != null ? View(transactions) :
                         Problem("Entity set 'AppDbContext.Transactions'  is null.");
         }
 
         [HttpPost]
-        public async Task<IActionResult> ManageDeposits(int[] approvedDeposits)
+        public async Task<IActionResult> ManageDeposits(int[] approvedDeposits, int[] rejectedDeposits)
         {
+            int overlappingElements = approvedDeposits.Intersect(rejectedDeposits).Count();
+            if (overlappingElements > 0)
+            {
+                ViewBag.Message = "You cannot accept and reject the same transaction. Please try again.";
+                List<Transaction> transactions = _context.Transactions.Where(o => o.TransactionApproved == false).ToList();
+                return _context.Transactions != null ? View(transactions) :
+                            Problem("Entity set 'AppDbContext.Transactions'  is null.");
+            }
             foreach (int i in approvedDeposits)
             {
                 Transaction dbTransaction = _context.Transactions.Include(o => o.BankAccount).FirstOrDefault(o => o.TransactionID == i);
@@ -72,7 +84,14 @@ namespace fa22LBT.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Index", "Transactions");
+            foreach (int i in rejectedDeposits)
+            {
+                Transaction dbTransaction = _context.Transactions.Include(o => o.BankAccount).FirstOrDefault(o => o.TransactionID == i);
+                _context.Transactions.Remove(dbTransaction);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("ManageDeposits");
         }
 
         // GET: Transactions/Details/5
@@ -84,6 +103,8 @@ namespace fa22LBT.Controllers
             }
 
             var transaction = await _context.Transactions
+                .Include(t => t.Disputes)
+                .Include(t => t.BankAccount)
                 .FirstOrDefaultAsync(m => m.TransactionID == id);
             if (transaction == null)
             {
@@ -94,8 +115,17 @@ namespace fa22LBT.Controllers
         }
 
         // GET: Transactions/CreateTransfer
-        public IActionResult CreateTransfer()
+        public async Task<IActionResult> CreateTransfer()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
             ViewBag.CustomerAccounts = GetAllAccountsSelectList();
             Transaction t = new Transaction();
             return View(t);
@@ -301,8 +331,17 @@ namespace fa22LBT.Controllers
         }
 
         // GET: Transactions/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            if (User.Identity.IsAuthenticated)
+            {
+                AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                if (userLoggedIn.IsActive == false)
+                {
+                    return View("Locked");
+                }
+            }
+
             ViewBag.CustomerAccounts = GetAllAccountsSelectList();
             Transaction t = new Transaction();
             return View(t);

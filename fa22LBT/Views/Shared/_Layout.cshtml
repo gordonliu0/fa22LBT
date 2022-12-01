@@ -21,17 +21,20 @@
                         <a asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a asp-controller="BankAccounts" asp-action="Index" class="nav-link">Accounts</a>
-                    </li>
-                    <li class="nav-item">
-                        <a asp-controller="Transactions" asp-action="Index" class="nav-link">Transactions</a>
+                        <a asp-controller="BankAccounts" asp-action="Index" class="nav-link">BankAccounts</a>
                     </li>
                     @if (User.Identity.IsAuthenticated)
                     {
-                        @if (User.IsInRole("Admin"))
+                        @if (User.IsInRole("Customer"))
                         {
-                            <li>
-                                <a asp-controller="RoleAdmin" asp-action="Index" class="nav-link">Manage Users</a>
+                            <li class="nav-item">
+                                <a asp-controller="Transactions" asp-action="Create" class="nav-link">Deposit/Withdraw</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="Transactions" asp-action="CreateTransfer" class="nav-link">Make Transfer</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="StockTransactions" asp-action="Create" class="nav-link">Buy Stocks</a>
                             </li>
                         }
                     }

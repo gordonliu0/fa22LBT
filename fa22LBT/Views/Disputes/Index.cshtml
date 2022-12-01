@@ -7,11 +7,29 @@
 <h1>Index</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Index" asp-route-all="true">See All</a>
 </p>
 <table class="table">
     <thead>
         <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.DisputeTransaction.BankAccount.Customer.FirstName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DisputeTransaction.BankAccount.Customer.LastName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DisputeTransaction.BankAccount.Customer.PhoneNumber)
+            </th>
+            <th>
+                Transaction Name
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DisputeTransaction.TransactionNumber)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DisputeTransaction.TransactionAmount)
+            </th>
             <th>
                 @Html.DisplayNameFor(model => model.DisputeDescription)
             </th>
@@ -28,18 +46,37 @@
 @foreach (var item in Model) {
         <tr>
             <td>
-                @Html.DisplayFor(modelItem => item.DisputeDescription)
+                @Html.DisplayFor(model => item.DisputeTransaction.BankAccount.Customer.FirstName)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.CorrectAmount)
+                @Html.DisplayFor(model => item.DisputeTransaction.BankAccount.Customer.LastName)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.DisputeStatus)
+                @Html.DisplayFor(model => item.DisputeTransaction.BankAccount.Customer.PhoneNumber)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.DisputeID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.DisputeID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.DisputeID">Delete</a>
+                @Html.DisplayFor(model => item.DisputeTransaction.TransactionComments)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.DisputeTransaction.TransactionNumber)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.DisputeTransaction.TransactionAmount)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.DisputeDescription)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.CorrectAmount)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.DisputeStatus)
+            </td>
+            <td>
+                @if (item.DisputeStatus == DisputeStatus.Submitted)
+                {
+                    <a asp-action="AcceptDispute" asp-route-id="@item.DisputeID">Resolve</a>
+                }
             </td>
         </tr>
 }

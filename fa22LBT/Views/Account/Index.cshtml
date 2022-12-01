@@ -26,9 +26,22 @@
         <dt>Age:</dt>
         <dd>@Model.Age</dd>
 
+        <dt>Profile Activated:</dt>
+        <dd>@Model.IsActive</dd>
+
         <dt>Password:</dt>
         <dd>
-            @Html.ActionLink("Change your password", "ChangePassword")
+            @if (User.Identity.IsAuthenticated)
+            {
+                @if ((User.IsInRole("Employee") || User.IsInRole("Admin")) && User.Identity.Name != Model.UserName)
+                {
+                    <a asp-action="ChangePasswordEmployee" asp-route-id="@Model.UserName">Change this account's password</a>
+                }
+                else
+                {
+                    @Html.ActionLink("Change your password", "ChangePassword")
+                }
+            }
         </dd>
 
         <dt>Want to change your info?</dt>

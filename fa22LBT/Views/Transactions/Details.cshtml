@@ -5,7 +5,9 @@
 }
 
 <h1>Details</h1>
-
+<div>
+    <a asp-controller="BankAccounts" asp-action="Details" asp-route-id="@Model?.BankAccount.AccountID">Back to Bank Account</a>
+</div>
 <div>
     <h4>Transaction</h4>
     <hr />
@@ -61,6 +63,57 @@
     </dl>
 </div>
 <div>
-    <a asp-action="Edit" asp-route-id="@Model?.TransactionID">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <a asp-controller="Disputes" asp-action="Create" asp-route-id="@Model?.TransactionID">Create Dispute</a>
 </div>
+
+<h2>Disputes</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Dispute ID
+            </th>
+            <th>
+                Dispute Status
+            </th>
+            <th>
+                Dispute Amount
+            </th>
+            <th>
+                Dispute Description
+            </th>
+            <th>
+                Admin
+            </th>
+            <th>
+                Admin Comments
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (Dispute item in Model.Disputes)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.DisputeID)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.DisputeStatus)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CorrectAmount)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.DisputeDescription)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.AdminEmail)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.AdminComments)
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

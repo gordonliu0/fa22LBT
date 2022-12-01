@@ -4,7 +4,10 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>Manage Deposit Requests</h1>
+<h4>Note: Rejecting a deposit request deletes the transaction from the user's account!</h4>
+
+@ViewBag.Message
 
 <form asp-action="ManageDeposits">
     <table class="table">
@@ -31,7 +34,8 @@
                 <th>
                     @Html.DisplayNameFor(model => model.FromAccount)
                 </th>
-                <th>Approve?</th>
+                <th>Approve</th>
+                <th>Reject</th>
             </tr>
         </thead>
         <tbody>
@@ -61,6 +65,9 @@
                     </td>
                     <td>
                         <input type="checkbox" name="approvedDeposits" value="@item.TransactionID" />
+                    </td>
+                    <td>
+                        <input type="checkbox" name="rejectedDeposits" value="@item.TransactionID" />
                     </td>
                 </tr>
             }
