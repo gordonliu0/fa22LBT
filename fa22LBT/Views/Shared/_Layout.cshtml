@@ -20,13 +20,14 @@
                     <li class="nav-item">
                         <a asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
                     </li>
-                    <li class="nav-item">
-                        <a asp-controller="BankAccounts" asp-action="Index" class="nav-link">BankAccounts</a>
-                    </li>
+
                     @if (User.Identity.IsAuthenticated)
                     {
                         @if (User.IsInRole("Customer"))
                         {
+                            <li class="nav-item">
+                                <a asp-controller="BankAccounts" asp-action="Index" class="nav-link">BankAccounts</a>
+                            </li>
                             <li class="nav-item">
                                 <a asp-controller="Transactions" asp-action="Create" class="nav-link">Deposit/Withdraw</a>
                             </li>
@@ -35,6 +36,36 @@
                             </li>
                             <li class="nav-item">
                                 <a asp-controller="StockTransactions" asp-action="Create" class="nav-link">Buy Stocks</a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a asp-controller="Account" asp-action="AllCustomers" class="nav-link">All Customers</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="Account" asp-action="AllEmployees" class="nav-link">All Employees</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="Transactions" asp-action="ManageDeposits" class="nav-link">Manage Deposits</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="Disputes" asp-action="Index" class="nav-link">Manage Disputes</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="Stocks" asp-action="Index" class="nav-link">Stocks</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="StockTypes" asp-action="Index" class="nav-link">StockTypes</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="StockPortfolios" asp-action="BonusIndex" class="nav-link">Bonus</a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Employee"))
+                        {
+                            <li class="nav-item">
+                                <a asp-controller="Account" asp-action="AllCustomers" class="nav-link">Manage Customers</a>
                             </li>
                         }
                     }

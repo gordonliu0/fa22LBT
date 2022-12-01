@@ -39,7 +39,7 @@ namespace fa22LBT.Models
         public DateTime DOB { get; set; }
 
         [Display(Name = "User Enabled")]
-        public Boolean IsActive { get; set; }
+        public Boolean IsActive { get; set; } = true;
 
         // CALCULATED PROPERTIES
         [Display(Name = "Full Name")]

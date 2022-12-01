@@ -34,6 +34,82 @@ namespace fa22LBT.Controllers
             return View();
         }
 
+        [Authorize(Roles = "Admin")]
+        public IActionResult RegisterEmployee()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> RegisterEmployee(RegisterViewModel rvm)
+        {
+            //if registration data is valid, create a new user on the database
+            if (ModelState.IsValid == false)
+            {
+                //this is the sad path - something went wrong, 
+                //return the user to the register page to try again
+                return View(rvm);
+            }
+
+            //this code maps the RegisterViewModel to the AppUser domain model
+            AppUser newUser = new AppUser
+            {
+                UserName = rvm.Email,
+                Email = rvm.Email,
+                PhoneNumber = rvm.PhoneNumber,
+
+                //TODO: Add the rest of the custom user fields here
+                //FirstName is included as an example
+                FirstName = rvm.FirstName,
+                MiddleInitial = rvm.MiddleInitial,
+                LastName = rvm.LastName,
+                Address = rvm.Address,
+                City = rvm.City,
+                State = rvm.State,
+                ZipCode = rvm.ZipCode,
+                DOB = rvm.DOB,
+                IsActive = false
+            };
+
+            //create AddUserModel
+            AddUserModel aum = new AddUserModel()
+            {
+                User = newUser,
+                Password = rvm.Password,
+
+                //TODO: You will need to change this value if you want to 
+                //add the user to a different role - just specify the role name.
+                RoleName = "Employee"
+            };
+
+            //This code uses the AddUser utility to create a new user with the specified password
+            IdentityResult result = await Utilities.AddUser.AddUserWithRoleAsync(aum, _userManager, _context);
+
+            if (result.Succeeded) //everything is okay
+            {
+                //NOTE: This code logs the user into the account that they just created
+                //You may or may not want to log a user in directly after they register - check
+                //the business rules!
+                //Microsoft.AspNetCore.Identity.SignInResult result2 = await _signInManager.PasswordSignInAsync(rvm.Email, rvm.Password, false, lockoutOnFailure: false);
+
+                //Send the user to the home page
+                return RedirectToAction("Account", "Index", new {id = rvm.Email} );
+            }
+            else  //the add user operation didn't work, and we need to show an error message
+            {
+                foreach (IdentityError error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+
+                //send user back to page with errors
+                return View(rvm);
+            }
+        }
+
+        [Authorize(Roles = "Employee, Admin")]
         public async Task<IActionResult> AllCustomers()
         {
             //this is a list of all the users who ARE in this role (members)
@@ -45,6 +121,27 @@ namespace fa22LBT.Controllers
             foreach (AppUser user in _userManager.Users)
             {
                 if (await _userManager.IsInRoleAsync(user, "Customer") == true) //user is in the role
+                {
+                    //add user to list of members
+                    RoleMembers.Add(user);
+                }
+            }
+
+            return View(RoleMembers);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AllEmployees()
+        {
+            //this is a list of all the users who ARE in this role (members)
+            List<AppUser> RoleMembers = new List<AppUser>();
+
+            //loop through ALL the users and decide if they are in the role(member) or not (non-member)
+            //every user will be evaluated for every role, so this is a SLOW chunk of code because
+            //it accesses the database so many times
+            foreach (AppUser user in _userManager.Users)
+            {
+                if (await _userManager.IsInRoleAsync(user, "Employee") == true) //user is in the role
                 {
                     //add user to list of members
                     RoleMembers.Add(user);
@@ -85,7 +182,7 @@ namespace fa22LBT.Controllers
                 State = rvm.State,
                 ZipCode = rvm.ZipCode,
                 DOB = rvm.DOB,
-                IsActive = rvm.IsActive
+                IsActive = true
             };
 
             //create AddUserModel
@@ -143,6 +240,13 @@ namespace fa22LBT.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Login(LoginViewModel lvm, string returnUrl)
         {
+            // Check if employee is allowed
+            AppUser userLoggedIn = await _userManager.FindByNameAsync(lvm.Email);
+            if (userLoggedIn.IsActive == false && await _userManager.IsInRoleAsync(userLoggedIn, "Employee"))
+            {
+                return View("Error", new string[] { "Please contact an admin. Your employee account has been deactivated." });
+            }
+
             //attempt to sign the user in using the SignInManager
             Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.PasswordSignInAsync(lvm.Email, lvm.Password, lvm.RememberMe, lockoutOnFailure: false);
 
@@ -296,7 +400,7 @@ namespace fa22LBT.Controllers
                 {
                     return View("Error");
                 }
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index", new { id = email });
             }
             return View("Index");
         }

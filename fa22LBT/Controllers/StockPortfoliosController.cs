@@ -30,6 +30,48 @@ namespace fa22LBT.Controllers
                           Problem("Entity set 'AppDbContext.StockPortfolios'  is null.");
         }
 
+        public async Task<IActionResult> BonusIndex()
+        {
+            List<StockPortfolio> sp = await _context.StockPortfolios
+                .Include(s => s.BankAccount)
+                .Where(s => s.IsBalanced == true)
+                .ToListAsync();
+
+            return _context.StockPortfolios != null ?
+                        View(sp) :
+                        Problem("Entity set 'AppDbContext.StockPortfolios'  is null.");
+        }
+
+        public async Task<IActionResult> ApplyBonus()
+        {
+            List<StockPortfolio> sp = await _context.StockPortfolios
+                .Include(s => s.BankAccount)
+                .Where(s => s.IsBalanced == true)
+                .ToListAsync();
+
+            foreach (StockPortfolio s in sp)
+            {
+                BankAccount dbBA = _context.BankAccounts.FirstOrDefault(ba => ba.AccountID == s.BankAccount.AccountID);
+                Decimal BonusAmount = Math.Round(dbBA.AccountBalance * 0.1m, 2);
+                Transaction fee = new Transaction();
+                fee.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
+                fee.TransactionType = TransactionType.Bonus;
+                fee.TransactionAmount = BonusAmount;
+                fee.TransactionApproved = true;
+                fee.ToAccount = dbBA.AccountNo;
+                fee.BankAccount = dbBA;
+                fee.TransactionComments = "Balanced Portfolio Bonus.";
+                fee.OrderDate = DateTime.Now;
+                _context.Add(fee);
+                await _context.SaveChangesAsync();
+                dbBA.AccountBalance += BonusAmount;
+                _context.Update(dbBA);
+                await _context.SaveChangesAsync();
+            }
+
+            return View("BonusConfirmation", sp);
+        }
+
         // GET: StockPortfolios/Details/5
         public async Task<IActionResult> Details(string id)
         {

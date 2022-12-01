@@ -1,0 +1,57 @@
+@model IEnumerable<fa22LBT.Models.StockPortfolio>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="ApplyBonus">Apply Bonus to All Accounts</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.AccountNo)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.AccountName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.BankAccount.AccountBalance)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsBalanced)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsApproved)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.AccountNo)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.AccountName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.BankAccount.AccountBalance)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsBalanced)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsApproved)
+            </td>
+            <td>
+                <a asp-action="Details" asp-route-id="@item.AccountID">Details</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

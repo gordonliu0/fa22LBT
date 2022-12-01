@@ -113,6 +113,9 @@ namespace fa22LBT.Controllers
             }
             // bank account balance should create new transaction
             bankAccount.Customer = await _userManager.FindByNameAsync(bankAccount.Customer.UserName);
+            AppUser user = await _userManager.FindByNameAsync(bankAccount.Customer.UserName);
+            user.IsActive = true;
+            _context.Update(user);
             ModelState.Remove("AccountID");
             ModelState.Remove("AccountNo");
             _context.Add(bankAccount);

@@ -4,7 +4,7 @@ using System.Xml.Linq;
 
 namespace fa22LBT.Models
 {
-    public enum TransactionType { Deposit, Withdraw, Transfer, Fee }
+    public enum TransactionType { Deposit, Withdraw, Transfer, Fee, Bonus }
 
 	public class Transaction
 	{

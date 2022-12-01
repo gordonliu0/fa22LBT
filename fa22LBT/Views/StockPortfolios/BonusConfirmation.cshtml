@@ -1,0 +1,44 @@
+@model IEnumerable<fa22LBT.Models.StockPortfolio>
+
+@{
+    ViewData["Title"] = "Balanced Bonus Applied";
+}
+
+<h1>Congratulations, the Balanced Bonus has been applied!</h1>
+
+<p>
+    <a asp-controller="Home" asp-action="Index">Go Home</a>
+</p>
+
+<h2>The following have been rewarded:</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.AccountNo)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.AccountName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.BankAccount.AccountBalance)
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.AccountNo)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.AccountName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.BankAccount.AccountBalance)
+            </td>
+            
+        </tr>
+}
+    </tbody>
+</table>
