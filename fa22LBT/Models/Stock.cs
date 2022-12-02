@@ -10,6 +10,7 @@ namespace fa22LBT.Models
         public Int32 StockID { get; set; }
 
         [Display(Name = "Ticker Symbol")]
+        [RegularExpression(@"([A-Z]{1,5})", ErrorMessage = "Please input a Ticker Symbol of Capital Letters and length of 1-5 characters")]
         public String TickerSymbol { get; set; }
 
         [Display(Name = "Stock Name")]
@@ -17,6 +18,8 @@ namespace fa22LBT.Models
 
         [Display(Name = "Stock Price")]
         [DisplayFormat(DataFormatString = "{0:c}")]
+        [RegularExpression(@"(^[0-9]+)?(\.[0-9]{0,2})?$", ErrorMessage = "Please input a maximum of 2 decimal places.")]
+        [Range(0.01, 2147483646, ErrorMessage = "The amount should be greater than 0!")]
         public Decimal StockPrice { get; set; }
 
         // CALCULATED PROPERTIES

@@ -1,4 +1,4 @@
-using System;
+    using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -172,6 +172,7 @@ namespace fa22LBT.Controllers
                 Problem("Entity set 'AppDbContext.Transactions'  is null.");
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ManageDeposits()
         {
             List<Transaction> transactions = _context.Transactions.Where(o => o.TransactionApproved == false).ToList();
@@ -221,6 +222,11 @@ namespace fa22LBT.Controllers
                 Transaction dbTransaction = _context.Transactions.Include(o => o.BankAccount).FirstOrDefault(o => o.TransactionID == i);
                 _context.Transactions.Remove(dbTransaction);
                 await _context.SaveChangesAsync();
+                BankAccount dbBankAccount = _context.BankAccounts.Include(ba => ba.Customer).FirstOrDefault(o => o.AccountID == dbTransaction.BankAccount.AccountID);
+
+                String emailbody = "Your deposit of $" + dbTransaction.TransactionAmount + " have been rejected. The transaction was deleted.";
+                String emailsubject = "Deposit Status Update";
+                Utilities.EmailMessaging.SendEmail(dbBankAccount.Customer.Email, emailsubject, emailbody);
             }
 
             return RedirectToAction("ManageDeposits");
@@ -237,7 +243,15 @@ namespace fa22LBT.Controllers
             var transaction = await _context.Transactions
                 .Include(t => t.Disputes)
                 .Include(t => t.BankAccount)
+                .ThenInclude(ba => ba.Customer)
                 .FirstOrDefaultAsync(m => m.TransactionID == id);
+
+            if (User.IsInRole("Customer") && transaction.BankAccount.Customer.Email != User.Identity.Name)
+            {
+                return View("Error", new string[] { "Access Denied" });
+            }
+
+
             if (transaction == null)
             {
                 return NotFound();
@@ -252,6 +266,12 @@ namespace fa22LBT.Controllers
             if (User.Identity.IsAuthenticated)
             {
                 AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                List<BankAccount> bas = _context.BankAccounts.Where(ba => ba.Customer.Email == userLoggedIn.Email).ToList();
+                if (bas.Count() == 0)
+                {
+                    return View("Error", new string[] { "You don't have any accounts. Please apply for one!" });
+                }
+
                 if (userLoggedIn.IsActive == false)
                 {
                     return View("Locked");
@@ -293,6 +313,7 @@ namespace fa22LBT.Controllers
             tFrom.FromAccount = dbFromBankAccount.AccountNo;
             dbFromBankAccount.AccountBalance -= transaction.TransactionAmount;
             _context.Add(tFrom);
+            _context.Update(dbFromBankAccount);
             await _context.SaveChangesAsync();
 
             // CREATE FEE TRANSACTION
@@ -311,29 +332,30 @@ namespace fa22LBT.Controllers
             tTo.TransactionComments = "Transfer from Account [" + dbFromBankAccount.HiddenAccountNo.ToString() + "]" + dbFromBankAccount.AccountName;
             tTo.TransactionType = TransactionType.Deposit;
             Int32 tToTransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
-            await Create(tTo, ToBankAccount);
+            tTo.TransactionNumber = tToTransactionNumber;
+            tTo.TransactionApproved = true;
+            tTo.BankAccount = dbToBankAccount;
+            tTo.ToAccount = dbToBankAccount.AccountNo;
+            tTo.FromAccount = dbFromBankAccount.AccountNo;
+            tTo.OrderDate = transaction.OrderDate;
+            dbToBankAccount.AccountBalance += tTo.TransactionAmount;
+            _context.Add(tTo);
+            _context.Update(dbToBankAccount);
             await _context.SaveChangesAsync();
-
-            Transaction dbDeposit = _context.Transactions.FirstOrDefault(db => db.TransactionNumber == tToTransactionNumber);
-
-            // If deposit is not approved, approve it and update that bank account
-            if (dbDeposit.TransactionAmount > 5000){
-                dbDeposit.TransactionApproved = true;
-                dbToBankAccount.AccountBalance += dbDeposit.TransactionAmount;
-                _context.Update(dbDeposit);
-                await _context.SaveChangesAsync();
-            }
 
             Transaction tFrom = new Transaction();
             tFrom.TransactionAmount = transaction.TransactionAmount;
             tFrom.TransactionComments = "Transfer to Account [" + dbToBankAccount.HiddenAccountNo.ToString() + "]" + dbToBankAccount.AccountName;
             tFrom.TransactionType = TransactionType.Withdraw;
-            Int32 tFromTransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
-            await Create(tFrom, FromBankAccount);
-
-            Transaction dbWithdraw = _context.Transactions.FirstOrDefault(db => db.TransactionNumber == tFromTransactionNumber);
-            dbWithdraw.TransactionNumber -= 1;
-            _context.Update(dbWithdraw);
+            tFrom.TransactionNumber = tToTransactionNumber;
+            tFrom.TransactionApproved = true;
+            tFrom.BankAccount = dbFromBankAccount;
+            tFrom.ToAccount = dbToBankAccount.AccountNo;
+            tFrom.FromAccount = dbFromBankAccount.AccountNo;
+            tFrom.OrderDate = transaction.OrderDate;
+            dbFromBankAccount.AccountBalance -= tTo.TransactionAmount;
+            _context.Add(tFrom);
+            _context.Update(dbFromBankAccount);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");
@@ -341,6 +363,12 @@ namespace fa22LBT.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTransfer(Transaction transaction, string ToBankAccount, string FromBankAccount)
         {
+            if (ToBankAccount == FromBankAccount)
+            {
+                ViewBag.CustomerAccounts = GetAllAccountsSelectList();
+                ViewBag.Overdrawn = "You cannot transfer between the same account.";
+                return View(transaction);
+            }
             ViewBag.CustomerAccounts = GetAllAccountsSelectList();
             ViewBag.ToBankAccount = ToBankAccount;
             ViewBag.FromBankAccount = FromBankAccount;
@@ -407,8 +435,6 @@ namespace fa22LBT.Controllers
                     else
                     {
                         transaction.TransactionApproved = true;
-                        dbFromBankAccount.AccountBalance -= transaction.TransactionAmount;
-                        _context.Update(dbFromBankAccount);
                     }
                 }
                 else
@@ -468,6 +494,12 @@ namespace fa22LBT.Controllers
             if (User.Identity.IsAuthenticated)
             {
                 AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
+                List<BankAccount> bas = _context.BankAccounts.Where(ba => ba.Customer.Email == userLoggedIn.Email).ToList();
+                if (bas.Count() == 0)
+                {
+                    return View("Error", new string[] { "You don't have any accounts. Please apply for one!" });
+                }
+
                 if (userLoggedIn.IsActive == false)
                 {
                     return View("Locked");
@@ -586,7 +618,7 @@ namespace fa22LBT.Controllers
             ViewBag.IsInitial = true;
             Transaction transaction = new Transaction();
             transaction.TransactionNumber = Utilities.GenerateNumbers.GetTransactionNumber(_context);
-            BankAccount dbBankAccount = _context.BankAccounts.Include(db => db.Customer).FirstOrDefault(db => db.AccountID == SelectedBankAccount);
+            BankAccount dbBankAccount = await _context.BankAccounts.Include(db => db.Customer).FirstOrDefaultAsync(db => db.AccountID == SelectedBankAccount);
             transaction.BankAccount = dbBankAccount;
             transaction.ToAccount = dbBankAccount.AccountNo;
             transaction.TransactionComments = "Initial Deposit";

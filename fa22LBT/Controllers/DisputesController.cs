@@ -8,9 +8,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using fa22LBT.DAL;
 using fa22LBT.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace fa22LBT.Controllers
 {
+    [Authorize]
     public class DisputesController : Controller
     {
         private readonly AppDbContext _context;
@@ -24,6 +26,7 @@ namespace fa22LBT.Controllers
         }
 
         // GET: Disputes
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index(Boolean? all)
         {
             List<Dispute> disputeList = await _context.Disputes.ToListAsync();
@@ -59,6 +62,7 @@ namespace fa22LBT.Controllers
         }
 
         // GET: Disputes/Create
+        [Authorize(Roles = "Customer")]
         public async Task<IActionResult> Create(int id)
         {
             if (User.Identity.IsAuthenticated)
@@ -71,7 +75,23 @@ namespace fa22LBT.Controllers
             }
 
             Dispute dispute = new Dispute();
-            Transaction dbTransaction = _context.Transactions.FirstOrDefault(t => t.TransactionID == id);
+            Transaction dbTransaction = _context.Transactions.Include(t => t.Disputes).FirstOrDefault(t => t.TransactionID == id);
+
+            if (dbTransaction.TransactionApproved == false)
+            {
+                return View("Error", new string[] { "This transaction is not approved yet. You may not create a dispute." });
+            }
+            foreach (Dispute d in dbTransaction.Disputes)
+            {
+                if (d.DisputeStatus == DisputeStatus.Submitted)
+                {
+                    return View("Error", new string[] { "A dispute for this transaction is currently being reviewed. You may create another one after if an admin rejects or adjusts the current one." });
+                }
+                if (d.DisputeStatus == DisputeStatus.Accepted)
+                {
+                    return View("Error", new string[] { "A dispute for this transaction has already been accepted. You may no longer create disputes." });
+                }
+            }
             dispute.CorrectAmount = dbTransaction.TransactionAmount;
             dispute.DisputeTransaction = dbTransaction;
             return View(dispute);
@@ -84,7 +104,6 @@ namespace fa22LBT.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("DisputeID,DisputeDescription,CorrectAmount,DisputeStatus,DisputeTransaction.TransactionID")] Dispute dispute, int transactionID)
         {
-
             Transaction dbTransaction = _context.Transactions.Include(t => t.Disputes).FirstOrDefault(t => t.TransactionID == transactionID);
             foreach (Dispute dis in dbTransaction.Disputes)
             {
@@ -92,6 +111,12 @@ namespace fa22LBT.Controllers
                 {
                     return View("NoDisputes");
                 }
+            }
+            if (dbTransaction.TransactionAmount == dispute.CorrectAmount)
+            {
+                dispute.DisputeTransaction = dbTransaction;
+                ViewBag.Message = "Please input a different amount than your current transaction of " + dbTransaction.TransactionAmount.ToString();
+                return View(dispute);
             }
             dispute.DisputeStatus = DisputeStatus.Submitted;
             dispute.DisputeTransaction = dbTransaction;
@@ -180,10 +205,18 @@ namespace fa22LBT.Controllers
 
             // TODO: emails that the password have changed
             String emailsubject = "Dispute Status Update";
-            String emailbody = "Your dispute have been resolved.";
+            String emailbody = "";
+            if (dispute.DisputeStatus == DisputeStatus.Rejected)
+            {
+                emailbody = "Your dispute have been rejected.";
+            }
+            else if (dispute.DisputeStatus == DisputeStatus.Accepted)
+            {
+                emailbody = "Your dispute have been accepted.";
+            }
             Utilities.EmailMessaging.SendEmail(dbBankAccount.Customer.Email, emailsubject, emailbody);
-
-            return RedirectToAction("Details", "Transactions", new { id = dbTransaction.TransactionID });
+            ViewBag.Action = dispute.DisputeStatus.ToString();
+            return View("DisputeConfirmation");
         }
 
         [HttpPost]
@@ -193,7 +226,7 @@ namespace fa22LBT.Controllers
             // GRAB RELEVANT
             Dispute dbDispute = _context.Disputes.Include(t => t.DisputeTransaction).FirstOrDefault(t => t.DisputeID == dispute.DisputeID);
             Transaction dbTransaction = _context.Transactions.Include(t => t.BankAccount).FirstOrDefault(t => t.TransactionID == dbDispute.DisputeTransaction.TransactionID);
-            BankAccount dbBankAccount = _context.BankAccounts.FirstOrDefault(t => t.AccountID == dbTransaction.BankAccount.AccountID);
+            BankAccount dbBankAccount = _context.BankAccounts.Include(ba => ba.Customer).FirstOrDefault(t => t.AccountID == dbTransaction.BankAccount.AccountID);
 
             dbDispute.DisputeStatus = DisputeStatus.Adjusted;
             dbDispute.AdminEmail = dispute.AdminEmail;
@@ -228,7 +261,8 @@ namespace fa22LBT.Controllers
             String emailbody = "Your dispute has been adjusted by " + dbDispute.AdminEmail + ". Your account has been updated accordingly";
             Utilities.EmailMessaging.SendEmail(dbBankAccount.Customer.Email, emailsubject, emailbody);
 
-            return RedirectToAction("Details", "Transactions", new { id = dbTransaction.TransactionID });
+            ViewBag.Action = "Adjusted";
+            return View("DisputeConfirmation");
         }
 
         // GET: Disputes/Edit/5

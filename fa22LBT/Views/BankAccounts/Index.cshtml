@@ -4,11 +4,11 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>Customer Home</h1>
 
 <p>
-    <a asp-action="Create">Create New Bank Account</a>
-    <a asp-action="Create" asp-controller="StockPortfolios">Apply for Stock Portfolio</a>
+    <a asp-action="Create" class="btn">Create New Bank Account</a>
+    <a asp-action="Create" asp-controller="StockPortfolios" class="btn">Apply for Stock Portfolio</a>
 </p>
 <table class="table">
     <thead>
@@ -35,7 +35,7 @@
 @foreach (var item in Model) {
         <tr>
             <td>
-                @Html.DisplayFor(modelItem => item.AccountNo)
+                @Html.DisplayFor(modelItem => item.HiddenAccountNo)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.AccountName)

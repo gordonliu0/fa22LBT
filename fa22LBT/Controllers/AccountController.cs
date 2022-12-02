@@ -70,7 +70,7 @@ namespace fa22LBT.Controllers
                 State = rvm.State,
                 ZipCode = rvm.ZipCode,
                 DOB = rvm.DOB,
-                IsActive = false
+                IsActive = true
             };
 
             //create AddUserModel
@@ -95,7 +95,7 @@ namespace fa22LBT.Controllers
                 //Microsoft.AspNetCore.Identity.SignInResult result2 = await _signInManager.PasswordSignInAsync(rvm.Email, rvm.Password, false, lockoutOnFailure: false);
 
                 //Send the user to the home page
-                return RedirectToAction("Account", "Index", new {id = rvm.Email} );
+                return RedirectToAction("Index", "Account", new {id = rvm.Email} );
             }
             else  //the add user operation didn't work, and we need to show an error message
             {

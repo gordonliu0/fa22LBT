@@ -184,7 +184,7 @@ namespace fa22LBT.Controllers
             try
             {
                 //call the method to seed the users
-                Seeding.SeedTransactions.SeedAllTransactions(_context);
+                Seeding.SeedTransactions.SeedAllTransactions(_context, _userManager);
             }
             catch (Exception ex)
             {

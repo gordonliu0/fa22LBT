@@ -11,6 +11,8 @@ namespace fa22LBT.Models
         public Int32 StockTransactionID { get; set; }
 
         [Display(Name = "Quantity of Shares")]
+        [Range(1, 2147483646, ErrorMessage="Please Enter a positive Integer!")]
+        [RegularExpression(@"^[\d]*$", ErrorMessage = "Please input an integer value!")]
         public Int32 QuantityShares { get; set; }
 
         [Display(Name = "Transaction Number")]

@@ -65,7 +65,7 @@ namespace fa22LBT.Seeding
 
             StockPortfolio sp5 = new StockPortfolio()
             {
-                AccountNo = 2290000018,
+                AccountNo = 2290000024,
                 AccountName = "CBaker's Stock",
                 CashBalance = 6900m
             };

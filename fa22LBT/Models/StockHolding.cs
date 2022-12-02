@@ -11,6 +11,7 @@ namespace fa22LBT.Models
         [Display(Name = "Quantity of Shares")]
         [Required]
         [Range(1, 2147483646, ErrorMessage = "You must sell at least one share.")]
+        [RegularExpression(@"^[\d]*$", ErrorMessage = "Please input an integer value!")]
         public Int32 QuantityShares { get; set; }
 
         // CALCULATED PROPERTIES

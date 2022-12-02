@@ -17,6 +17,8 @@ namespace fa22LBT.Models
         [Display(Name = "Correct Amount")]
         [Required]
         [DisplayFormat(DataFormatString = "{0:c}")]
+        [Range(0.00, 2147483646, ErrorMessage = "Please enter a positive number!")]
+        [RegularExpression(@"(^[0-9]+)?(\.[0-9]{0,2})?$", ErrorMessage = "Please input a maximum of 2 decimal places.")]
         public Decimal CorrectAmount { get; set; }
 
         [Display(Name = "Dispute Status")]

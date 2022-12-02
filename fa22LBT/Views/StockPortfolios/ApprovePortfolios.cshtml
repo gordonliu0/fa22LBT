@@ -4,11 +4,8 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>Approve Portfolios</h1>
 
-<p>
-    <a asp-action="ApplyBonus">Process Stock Portfolios</a>
-</p>
 <table class="table">
     <thead>
         <tr>
@@ -17,9 +14,6 @@
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.AccountName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.BankAccount.AccountBalance)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.IsBalanced)
@@ -40,16 +34,14 @@
                 @Html.DisplayFor(modelItem => item.AccountName)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.BankAccount.AccountBalance)
-            </td>
-            <td>
                 @Html.DisplayFor(modelItem => item.IsBalanced)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.IsApproved)
-            </td>
-            <td>
-                <a asp-action="Details" asp-route-id="@item.AccountID">Details</a>
+                @if (item.IsApproved == false)
+{
+<a asp-controller="StockPortfolios" asp-action="Approve" asp-route-id="@item.AccountID">Approve</a>
+}
             </td>
         </tr>
 }

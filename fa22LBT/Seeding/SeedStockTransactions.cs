@@ -31,10 +31,17 @@ namespace fa22LBT.Seeding
                 Stock = db.Stocks.FirstOrDefault(s => s.TickerSymbol.Equals("AAPL")),
                 OrderDate = new DateTime(2022, 4, 1),
                 STransactionNo = 0,
-
             };
-
             AllStockTransactions.Add(st1);
+
+            StockHolding sh1 = new StockHolding()
+            {
+                StockPortfolio = dbSP,
+                QuantityShares = 10,
+                Stock = db.Stocks.FirstOrDefault(s => s.TickerSymbol.Equals("AAPL"))
+            };
+            db.Add(sh1);
+            db.SaveChanges();
 
             StockTransaction st2 = new StockTransaction()
             {
@@ -45,6 +52,15 @@ namespace fa22LBT.Seeding
                 OrderDate = new DateTime(2022, 4, 3),
                 STransactionNo = 0,
             };
+
+            StockHolding sh2 = new StockHolding()
+            {
+                StockPortfolio = dbSP,
+                QuantityShares = 5,
+                Stock = db.Stocks.FirstOrDefault(s => s.TickerSymbol.Equals("DIA"))
+            };
+            db.Add(sh2);
+            db.SaveChanges();
 
             AllStockTransactions.Add(st2);
 
@@ -60,12 +76,20 @@ namespace fa22LBT.Seeding
 
             AllStockTransactions.Add(st3);
 
+            StockHolding sh3 = new StockHolding()
+            {
+                StockPortfolio = dbSP,
+                QuantityShares = 2,
+                Stock = db.Stocks.FirstOrDefault(s => s.TickerSymbol.Equals("FLCEX"))
+            };
+            db.Add(sh3);
+            db.SaveChanges();
 
 
             //try  //attempt to add or update the book
             //{
-                //loop through each of the books in the list
-                foreach (StockTransaction stockTransactionToAdd in AllStockTransactions)
+            //loop through each of the books in the list
+            foreach (StockTransaction stockTransactionToAdd in AllStockTransactions)
                 {
                     //set the flag to the current title to help with debugging
                     //strStockTransactionName = stockTransactionToAdd.;

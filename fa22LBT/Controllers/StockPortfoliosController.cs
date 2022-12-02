@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using fa22LBT.DAL;
 using fa22LBT.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace fa22LBT.Controllers
 {
@@ -30,6 +31,15 @@ namespace fa22LBT.Controllers
                           Problem("Entity set 'AppDbContext.StockPortfolios'  is null.");
         }
 
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ApprovePortfolios()
+        {
+            return _context.StockPortfolios != null ?
+                        View(await _context.StockPortfolios.ToListAsync()) :
+                        Problem("Entity set 'AppDbContext.StockPortfolios'  is null.");
+        }
+
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> BonusIndex()
         {
             List<StockPortfolio> sp = await _context.StockPortfolios
@@ -42,6 +52,7 @@ namespace fa22LBT.Controllers
                         Problem("Entity set 'AppDbContext.StockPortfolios'  is null.");
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ApplyBonus()
         {
             List<StockPortfolio> sp = await _context.StockPortfolios
@@ -81,6 +92,7 @@ namespace fa22LBT.Controllers
             }
 
             var stockPortfolio = await _context.StockPortfolios
+                .Include(sp => sp.AppUser)
                 .Include(m => m.StockHoldings)
                 .ThenInclude(sh => sh.Stock)
                 .Include(m => m.StockTransactions)
@@ -89,12 +101,33 @@ namespace fa22LBT.Controllers
                 .ThenInclude(ba => ba.Transactions)
                 .FirstOrDefaultAsync(m => m.AccountID == id);
 
+            if (User.Identity.IsAuthenticated)
+            {
+                if (User.IsInRole("Customer") && stockPortfolio.AppUser.Email != User.Identity.Name)
+                {
+                    return View("Error", new string[] { "Access Denied for this Stock Portfolio" });
+                }
+            }
+
             if (stockPortfolio == null)
             {
                 return NotFound();
             }
 
             return View(stockPortfolio);
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult> Approve(string id)
+        {
+            StockPortfolio dbStockPortfolio = await _context.StockPortfolios.Include(sp => sp.BankAccount).FirstOrDefaultAsync( sp => sp.AccountID == id);
+            dbStockPortfolio.IsApproved = true;
+            _context.Update(dbStockPortfolio);
+            BankAccount dbBankAccount = await _context.BankAccounts.FirstOrDefaultAsync(sp => sp.AccountID == dbStockPortfolio.BankAccount.AccountID);
+            dbBankAccount.IsApproved = true;
+            _context.Update(dbBankAccount);
+            await _context.SaveChangesAsync();
+            return RedirectToAction("ApprovePortfolios", "StockPortfolios");
         }
 
         // GET: StockPortfolios/SaleDetails/5
@@ -148,8 +181,17 @@ namespace fa22LBT.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("AccountID,AccountNo,AccountName,CashBalance,IsBalanced,IsApproved,AppUser")] StockPortfolio stockPortfolio, int AccountBalance)
+        public async Task<IActionResult> Create([Bind("AccountID,AccountNo,AccountName,CashBalance,IsBalanced,IsApproved,AppUser")] StockPortfolio stockPortfolio)
         {
+            List<BankAccount> ba = _context.BankAccounts.Where(b => b.Customer.Email == User.Identity.Name).ToList();
+            foreach (BankAccount b in ba)
+            {
+                if (b.AccountType == AccountTypes.StockPortfolio)
+                {
+                    return View("Error", new string[] { "You've already created an StockPortfolio account." });
+                }
+            }
+
             BankAccount cashAccount = new BankAccount();
             cashAccount.AccountType = AccountTypes.StockPortfolio;
 
@@ -164,6 +206,7 @@ namespace fa22LBT.Controllers
             stockPortfolio.AccountNo = Utilities.GenerateNumbers.GetAccountNumber(_context);
 
             cashAccount.Customer = await _userManager.FindByNameAsync(stockPortfolio.AppUser.UserName);
+
             stockPortfolio.AppUser = cashAccount.Customer;
 
             _context.Add(cashAccount);
@@ -172,7 +215,7 @@ namespace fa22LBT.Controllers
             _context.Add(stockPortfolio);
 
             await _context.SaveChangesAsync();
-            return RedirectToAction("InitialDepositStockPortfolio", "Transactions", new { SelectedBankAccount = cashAccount.AccountID, AccountBalance = AccountBalance});
+            return RedirectToAction("InitialDepositStockPortfolio", "Transactions", new { SelectedBankAccount = cashAccount.AccountID, AccountBalance = stockPortfolio.CashBalance});
         }
 
         //// GET: StockPortfolios/Edit/5

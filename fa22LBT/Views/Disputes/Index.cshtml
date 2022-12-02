@@ -22,7 +22,13 @@
                 @Html.DisplayNameFor(model => model.DisputeTransaction.BankAccount.Customer.PhoneNumber)
             </th>
             <th>
+                @Html.DisplayNameFor(model => model.DisputeTransaction.BankAccount.AccountNo)
+            </th>
+            <th>
                 Transaction Name
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DisputeTransaction.TransactionType)
             </th>
             <th>
                 @Html.DisplayNameFor(model => model.DisputeTransaction.TransactionNumber)
@@ -55,7 +61,13 @@
                 @Html.DisplayFor(model => item.DisputeTransaction.BankAccount.Customer.PhoneNumber)
             </td>
             <td>
+                @Html.DisplayFor(model => item.DisputeTransaction.BankAccount.AccountNo)
+            </td>
+            <td>
                 @Html.DisplayFor(model => item.DisputeTransaction.TransactionComments)
+            </td>
+            <td>
+                @Html.DisplayFor(model => item.DisputeTransaction.TransactionType)
             </td>
             <td>
                 @Html.DisplayFor(model => item.DisputeTransaction.TransactionNumber)

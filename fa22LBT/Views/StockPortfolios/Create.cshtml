@@ -21,7 +21,8 @@
             </div>
             <div class="form-group">
                 <label class="control-label">Initial Deposit</label>
-                <input type="number" required="required" min="0" id="AccountBalance" name="AccountBalance" class="form-control" />
+                <input asp-for="CashBalance" class="form-control" />
+                <span asp-validation-for="CashBalance" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />

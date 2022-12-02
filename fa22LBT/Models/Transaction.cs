@@ -21,7 +21,9 @@ namespace fa22LBT.Models
 
         [Display(Name = "Transaction Amount")]
         [DisplayFormat(DataFormatString = "{0:c}")]
-        [Range(0, Double.MaxValue, ErrorMessage = "The transaction amount must be greater than 0.")]
+        [Required]
+        [RegularExpression(@"(^[0-9]+)?(\.[0-9]{0,2})?$", ErrorMessage = "Please input a maximum of 2 decimal places.")]
+        [Range(0.01, 2147483646, ErrorMessage = "The amount should be greater than 0!")]
         public Decimal TransactionAmount { get; set; }
 
         [Display(Name = "Transaction Date")]

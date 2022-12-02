@@ -18,6 +18,8 @@ namespace fa22LBT.Models
 
         [Display(Name = "Cash Balance")]
         [DisplayFormat(DataFormatString = "{0:c}")]
+        [RegularExpression(@"(^[0-9]+)?(\.[0-9]{0,2})?$", ErrorMessage = "Please input a maximum of 2 decimal places.")]
+        [Range(0.01, 2147483646, ErrorMessage = "The amount should be greater than 0!")]
         public Decimal CashBalance { get; set; }
 
         [Display(Name = "IsBalanced")]
@@ -64,6 +66,51 @@ namespace fa22LBT.Models
             } else
             {
                 this.IsBalanced = false;
+            }
+        }
+
+        [Display(Name = "Total Portfolio Value")]
+        [DisplayFormat(DataFormatString = "{0:c}")]
+        public Decimal TotalBalance
+        {
+            get
+            {
+                if (this.BankAccount != null)
+                {
+                    decimal t = this.BankAccount.AccountBalance;
+                    foreach (StockHolding sh in this.StockHoldings)
+                    {
+                        t += sh.TotalValue;
+                    }
+                    return t;
+                }
+                return 0;
+            }
+        }
+
+        [Display(Name = "Total Fees Incurred")]
+        [DisplayFormat(DataFormatString = "{0:c}")]
+        public Decimal TotalFees
+        {
+            get
+            {
+                if (this.BankAccount == null)
+                {
+                    return 0;
+                }
+                if (this.BankAccount.Transactions == null)
+                {
+                    return 0;
+                }
+                decimal totalfee = 0;
+                foreach (Transaction t in this.BankAccount.Transactions)
+                {
+                    if (t.TransactionType == TransactionType.Fee)
+                    {
+                        totalfee += t.TransactionAmount;
+                    }
+                }
+                return totalfee;
             }
         }
 

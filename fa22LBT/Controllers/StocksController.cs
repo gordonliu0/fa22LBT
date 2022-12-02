@@ -38,6 +38,7 @@ namespace fa22LBT.Controllers
         }
 
         // GET: Stocks
+        [Authorize(Roles ="Customer, Employees, Admin")]
         public async Task<IActionResult> Index()
         {
               return _context.Stocks != null ? 
@@ -77,6 +78,13 @@ namespace fa22LBT.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("StockID,TickerSymbol,StockName,StockPrice")] Stock stock, Int32 SelectedStockType)
         {
+            Stock dbStock = await _context.Stocks.FirstOrDefaultAsync(s => s.TickerSymbol == stock.TickerSymbol);
+            if (dbStock != null)
+            {
+                ViewBag.Message = "Please choose a unique ticker symbol";
+                ViewBag.AllStockTypes = GetAllStockTypesSelectList();
+                return View();
+            }
             StockType dbStockType = _context.StockTypes.FirstOrDefault(m => m.StockTypeID == SelectedStockType);
             stock.StockType = dbStockType;
             ModelState.Remove("StockID");
@@ -86,7 +94,7 @@ namespace fa22LBT.Controllers
             {
                 _context.Add(stock);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return View("Confirmation", stock);
             }
             ViewBag.AllStockTypes = GetAllStockTypesSelectList();
             return View(stock);
@@ -117,6 +125,14 @@ namespace fa22LBT.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("StockID,TickerSymbol,StockName,StockPrice,StockType")] Stock stock)
         {
             Stock dbStock = _context.Stocks.Include(s => s.StockType).FirstOrDefault(s => s.StockID == id);
+            Stock dbTickerStockChecker = await _context.Stocks.FirstOrDefaultAsync(s => s.TickerSymbol == stock.TickerSymbol);
+            if (dbStock.TickerSymbol != stock.TickerSymbol && dbTickerStockChecker != null)
+            {
+                ViewBag.Message = "Your attempted TickerSymbol change has already been taken.";
+                ViewBag.AllStockTypes = GetAllStockTypesSelectList();
+                return View(stock);
+            }
+
             dbStock.TickerSymbol = stock.TickerSymbol;
             dbStock.StockName = stock.StockName;
             dbStock.StockPrice = stock.StockPrice;

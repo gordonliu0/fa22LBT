@@ -1,40 +1,51 @@
-<a asp-action="Index" asp-controller="Seed" class="btn btn-info">Seed Home Page</a>
 
-@if (User.Identity.IsAuthenticated)
-{
-    @if (User.IsInRole("Customer"))
+<div>
+    @if (User.Identity.IsAuthenticated)
     {
-        <li class="nav-item">
-            <a asp-controller="Transactions" asp-action="Create" class="btn-primary">Deposit/Withdraw</a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="Transactions" asp-action="CreateTransfer" class="nav-link">Make Transfer</a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="StockTransactions" asp-action="Create" class="nav-link">Buy Stocks</a>
-        </li>
+        @if (User.IsInRole("Customer"))
+        {
+            <h2>@ViewBag.Prompt</h2>
+            <a asp-controller="StockPortfolios" asp-action="Create" class="btn btn-primary">Apply for Stock Portfolio</a>
+            <a asp-controller="BankAccounts" asp-action="Create" class="btn btn-primary">Create An Account</a>
+
+        }
+        else if (User.IsInRole("Employee"))
+        {
+            <li class="nav-item">
+                <a asp-controller="Transactions" asp-action="Create" class="btn-primary">Deposit/Withdraw</a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="Transactions" asp-action="CreateTransfer" class="nav-link">Make Transfer</a>
+            </li>
+            <li class="nav-item">
+                <a asp-controller="StockTransactions" asp-action="Create" class="nav-link">Buy Stocks</a>
+            </li>
+        }
+        else if (User.IsInRole("Admin"))
+        {
+            @if (ViewBag.Task1 > 0)
+            {
+                <h3>Attention! You have @ViewBag.Task1 disputes that need to be resolved."</h3>
+            }
+             else
+            {
+<h3>You have no disputes in inbox.</h3>
+            }
+        
+                
+
+            <h3>@ViewBag.Task2</h3>
+        }
     }
-    else if (User.IsInRole("Employee"))
+    else
     {
-        <li class="nav-item">
-            <a asp-controller="Transactions" asp-action="Create" class="btn-primary">Deposit/Withdraw</a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="Transactions" asp-action="CreateTransfer" class="nav-link">Make Transfer</a>
-        </li>
-        <li class="nav-item">
-            <a asp-controller="StockTransactions" asp-action="Create" class="nav-link">Buy Stocks</a>
-        </li>
+        <h1> Welcome to LONGHORN BANK!</h1>
+        <p>All of your accounts in one place! We offer the following services:</p>
+        <li>Checking</li>
+        <li>Savings</li>
+        <li>IRA</li>
+        <li>Stock Portfolio</li>
+        <p>Sign up today!</p>
+        <a asp-controller="Account" asp-action="Register">Register Now</a>
     }
-}
-else
-{
-    <h1> Welcome to LONGHORN BANK!</h1>
-    <p>All of your accounts in one place! We offer the following services:</p>
-    <li>Checking</li>
-    <li>Savings</li>
-    <li>IRA</li>
-    <li>Stock Portfolio</li>
-    <p>Sign up today!</p>
-    <a asp-controller="Account" asp-action="Register">Register Now</a>
-}
+</div>

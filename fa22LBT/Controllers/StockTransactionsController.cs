@@ -10,9 +10,11 @@ using Microsoft.AspNetCore.Authorization;
 using fa22LBT.DAL;
 using fa22LBT.Models;
 using fa22LBT.Utilities;
+using Microsoft.AspNetCore.Authorization;
 
 namespace fa22LBT.Controllers
 {
+    [Authorize]
     public class StockTransactionsController : Controller
     {
         private readonly AppDbContext _context;
@@ -74,6 +76,28 @@ namespace fa22LBT.Controllers
                 {
                     return View("Locked");
                 }
+                if (User.Identity.IsAuthenticated)
+                {
+                    var stockPortfolio = await _context.StockPortfolios
+                        .Include(sp => sp.AppUser)
+                        .Include(m => m.StockHoldings)
+                        .ThenInclude(sh => sh.Stock)
+                        .Include(m => m.StockTransactions)
+                        .ThenInclude(st => st.Stock)
+                        .Include(m => m.BankAccount)
+                        .ThenInclude(ba => ba.Transactions)
+                        .FirstOrDefaultAsync(m => m.AppUser.Email == User.Identity.Name);
+
+                    if(stockPortfolio == null)
+                    {
+                        return View("Error", new string[] { "You don't have a stock portfolio yet. Please apply." });
+                    }
+
+                    if (stockPortfolio.IsApproved == false)
+                    {
+                        return View("Error", new string[] { "Your Stock Portfolio hasn't been approved yet" });
+                    }
+                }
             }
 
             ViewBag.AllStocks = GetAllStocksSelectList();
@@ -89,9 +113,9 @@ namespace fa22LBT.Controllers
         public async Task<IActionResult> Create([Bind("StockTransactionID,QuantityShares,PricePerShare,OrderDate,Stock,Stock.StockPrice")] StockTransaction stockTransaction, int SelectedStock)
         {
             // Gather Selected Stock and Associated StockPortfolio, CashPortfolio 
-            Stock dbStock = _context.Stocks.FirstOrDefault(o => o.StockID == SelectedStock);
-            StockPortfolio dbStockPortfolio = _context.StockPortfolios.Include(o => o.BankAccount).Include(o => o.StockHoldings).ThenInclude(sh => sh.Stock).ThenInclude(s => s.StockType).FirstOrDefault(o => o.AppUser.UserName == User.Identity.Name);
-            BankAccount dbBankAccount = _context.BankAccounts.FirstOrDefault(o => o.AccountID == dbStockPortfolio.BankAccount.AccountID);
+            Stock dbStock = await _context.Stocks.FirstOrDefaultAsync(o => o.StockID == SelectedStock);
+            StockPortfolio dbStockPortfolio = await _context.StockPortfolios.Include(o => o.BankAccount).Include(o => o.StockHoldings).ThenInclude(sh => sh.Stock).ThenInclude(s => s.StockType).FirstOrDefaultAsync(o => o.AppUser.UserName == User.Identity.Name);
+            BankAccount dbBankAccount = await _context.BankAccounts.FirstOrDefaultAsync(o => o.AccountID == dbStockPortfolio.BankAccount.AccountID);
             stockTransaction.PricePerShare = dbStock.StockPrice;
             stockTransaction.STransactionNo = Utilities.GenerateNumbers.GetTransactionNumber(_context);
 
@@ -120,7 +144,6 @@ namespace fa22LBT.Controllers
                 dbStockHolding.QuantityShares += stockTransaction.QuantityShares;
                 _context.Update(dbStockHolding);
             }
-            await _context.SaveChangesAsync();
 
             // Create and add new Transaction
             Transaction transaction = new Transaction();
@@ -149,8 +172,8 @@ namespace fa22LBT.Controllers
             await _context.SaveChangesAsync();
 
             // Update CashBalances for dbBankAccount and dbStockPortfolio
+            dbStockPortfolio = await _context.StockPortfolios.Include(o => o.BankAccount).Include(o => o.StockHoldings).ThenInclude(sh => sh.Stock).ThenInclude(s => s.StockType).FirstOrDefaultAsync(o => o.AppUser.UserName == User.Identity.Name);
             dbBankAccount.AccountBalance -= stockTransaction.QuantityShares * stockTransaction.PricePerShare + 10;
-            dbStockPortfolio.CashBalance = dbBankAccount.AccountBalance;
             _context.Update(dbBankAccount);
 
             // Update dbStockPortfolio balanced status

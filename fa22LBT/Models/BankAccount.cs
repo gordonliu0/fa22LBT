@@ -25,7 +25,10 @@ namespace fa22LBT.Models
         public AccountTypes AccountType { get; set; }
 
         [Display(Name = "Balance")]
+        [Required]
         [DisplayFormat(DataFormatString = "{0:c}")]
+        [Range(0.01, 2147483646, ErrorMessage = "Please enter a positive number!")]
+        [RegularExpression(@"(^[0-9]+)?(\.[0-9]{0,2})?$", ErrorMessage = "Please input a maximum of 2 decimal places.")]
         public Decimal AccountBalance { get; set; }
 
         [Display(Name = "Approved")]

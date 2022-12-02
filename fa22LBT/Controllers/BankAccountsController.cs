@@ -58,8 +58,14 @@ namespace fa22LBT.Controllers
 
             var bankAccount = await _context.BankAccounts
                 .Include(m => m.Transactions)
+                .Include(m => m.Customer)
                 .Include(m => m.StockPortfolio)
                 .FirstOrDefaultAsync(m => m.AccountID == id);
+
+            if (User.IsInRole("Customer") && bankAccount.Customer.Email != User.Identity.Name)
+            {
+                return View("Error", new string[] { "Access Denied" });
+            }
 
             if (bankAccount == null)
             {
@@ -112,8 +118,22 @@ namespace fa22LBT.Controllers
                     bankAccount.AccountName = "Longhorn IRA";
                 }
             }
+
             // bank account balance should create new transaction
             bankAccount.Customer = await _userManager.FindByNameAsync(bankAccount.Customer.UserName);
+            if (bankAccount.Customer.Age >= 70)
+            {
+                return View("Error", new string[] { "You are too old to create an IRA account." });
+            }
+            List<BankAccount> ba = _context.BankAccounts.Where(b => b.Customer.Email == User.Identity.Name).ToList();
+            foreach (BankAccount b in ba)
+            {
+                if (b.AccountType == AccountTypes.IRA && bankAccount.AccountType == AccountTypes.IRA)
+                {
+                    return View("Error", new string[] { "You've already created an IRA account." });
+                }
+            }
+
             AppUser user = await _userManager.FindByNameAsync(bankAccount.Customer.UserName);
             user.IsActive = true;
             _context.Update(user);

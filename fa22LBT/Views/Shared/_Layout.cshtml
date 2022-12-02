@@ -53,13 +53,19 @@
                                 <a asp-controller="Disputes" asp-action="Index" class="nav-link">Manage Disputes</a>
                             </li>
                             <li class="nav-item">
+                                <a asp-controller="StockPortfolios" asp-action="ApprovePortfolios" class="nav-link">Approve Stockportfolios</a>
+                            </li>
+                            <li class="nav-item">
                                 <a asp-controller="Stocks" asp-action="Index" class="nav-link">Stocks</a>
                             </li>
                             <li class="nav-item">
                                 <a asp-controller="StockTypes" asp-action="Index" class="nav-link">StockTypes</a>
                             </li>
                             <li class="nav-item">
-                                <a asp-controller="StockPortfolios" asp-action="BonusIndex" class="nav-link">Bonus</a>
+                                <a asp-controller="StockPortfolios" asp-action="BonusIndex" class="nav-link">Process Stock Portfolios</a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="Account" asp-action="RegisterEmployee" class="nav-link">Register Employee</a>
                             </li>
                         }
                         else if (User.IsInRole("Employee"))

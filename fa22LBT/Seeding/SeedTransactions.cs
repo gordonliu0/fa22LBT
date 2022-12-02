@@ -10,14 +10,19 @@ using NuGet.Protocol.Core.Types;
 using static System.Reflection.Metadata.BlobBuilder;
 using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
+using fa22LBT.Controllers;
+using Microsoft.AspNetCore.Mvc;
 
 namespace fa22LBT.Seeding
 {
     public static class SeedTransactions
     {
-        public static void SeedAllTransactions(AppDbContext db)
+        public async static Task SeedAllTransactions(AppDbContext db, UserManager<AppUser> userManager)
         {
             //create some counters to help debug problems
+            
+            TransactionsController tc = new TransactionsController(db, userManager);
+
             Int32 intTransactionAdded = 0;
             String strTransactionName = "Start";
 
@@ -33,6 +38,7 @@ namespace fa22LBT.Seeding
             };
             t1.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000021);
             AllTransactions.Add(t1);
+            
 
             Transaction t2 = new Transaction()
             {
@@ -59,7 +65,7 @@ namespace fa22LBT.Seeding
             t3.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000022);
             AllTransactions.Add(t3);
 
-            Transaction t4a = new Transaction()
+            Transaction t4 = new Transaction()
             {
                 TransactionNumber = 4,
                 TransactionType = TransactionType.Transfer,
@@ -70,22 +76,7 @@ namespace fa22LBT.Seeding
                 TransactionApproved = true,
                 TransactionComments = "Jacob Foster has a GPA of 1.92. LOL",
             };
-            t4a.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000021);
-            AllTransactions.Add(t4a);
-
-            Transaction t4b = new Transaction()
-            {
-                TransactionNumber = 4,
-                TransactionType = TransactionType.Transfer,
-                ToAccount = 2290000021,
-                FromAccount = 2290000022,
-                TransactionAmount = 1200m,
-                OrderDate = new DateTime(2022, 4, 14),
-                TransactionApproved = true,
-                TransactionComments = "Jacob Foster has a GPA of 1.92. LOL",
-            };
-            t4b.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000022);
-            AllTransactions.Add(t4b);
+            AllTransactions.Add(t4);
 
             Transaction t5 = new Transaction()
             {
@@ -112,7 +103,7 @@ namespace fa22LBT.Seeding
             t6.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000023);
             AllTransactions.Add(t6);
 
-            Transaction t7a = new Transaction()
+            Transaction t7 = new Transaction()
             {
                 TransactionNumber = 7,
                 TransactionType = TransactionType.Transfer,
@@ -122,21 +113,7 @@ namespace fa22LBT.Seeding
                 OrderDate = new DateTime(2022, 4, 20),
                 TransactionApproved = true,
             };
-            t7a.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000021);
-            AllTransactions.Add(t7a);
-
-            Transaction t7b = new Transaction()
-            {
-                TransactionNumber = 7,
-                TransactionType = TransactionType.Transfer,
-                ToAccount = 2290000021,
-                FromAccount = 2290000024,
-                TransactionAmount = 3000m,
-                OrderDate = new DateTime(2022, 4, 20),
-                TransactionApproved = true,
-            };
-            t7b.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000024);
-            AllTransactions.Add(t7b);
+            AllTransactions.Add(t7);
 
             Transaction t8 = new Transaction()
             {
@@ -151,7 +128,7 @@ namespace fa22LBT.Seeding
             t8.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000021);
             AllTransactions.Add(t8);
 
-            Transaction t9a = new Transaction()
+            Transaction t9 = new Transaction()
             {
                 TransactionNumber = 9,
                 TransactionType = TransactionType.Transfer,
@@ -161,21 +138,7 @@ namespace fa22LBT.Seeding
                 OrderDate = new DateTime(2022, 4, 29),
                 TransactionApproved = true,
             };
-            t9a.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000026);
-            AllTransactions.Add(t9a);
-
-            Transaction t9b = new Transaction()
-            {
-                TransactionNumber = 9,
-                TransactionType = TransactionType.Transfer,
-                FromAccount = 2290000026,
-                ToAccount = 2290000025,
-                TransactionAmount = 52m,
-                OrderDate = new DateTime(2022, 4, 29),
-                TransactionApproved = true,
-            };
-            t9b.BankAccount = db.BankAccounts.FirstOrDefault(u => u.AccountNo == 2290000025);
-            AllTransactions.Add(t9b);
+            AllTransactions.Add(t9);
 
             Transaction t10 = new Transaction()
             {
@@ -206,47 +169,59 @@ namespace fa22LBT.Seeding
 
             //try  //attempt to add or update the book
             //{
-                //loop through each of the books in the list
-                foreach (Transaction transactionToAdd in AllTransactions)
+            //loop through each of the books in the list
+            foreach (Transaction transactionToAdd in AllTransactions)
+            {
+                if (transactionToAdd.TransactionType != TransactionType.Transfer)
                 {
-                    //set the flag to the current title to help with debugging
-                    strTransactionName = transactionToAdd.TransactionComments;
+                    await tc.Create(transactionToAdd, transactionToAdd.BankAccount.AccountID);
+                }
+                else
+                {
+                    BankAccount toBankAccount = db.BankAccounts.FirstOrDefault(ba => ba.AccountNo == transactionToAdd.ToAccount);
+                    BankAccount fromBankAccount = db.BankAccounts.FirstOrDefault(ba => ba.AccountNo == transactionToAdd.FromAccount);
+                    await tc.CreateTransfer(transactionToAdd, toBankAccount.AccountID, fromBankAccount.AccountID);
+                }
+            }
+                    
+                //    //set the flag to the current title to help with debugging
+                //    strTransactionName = transactionToAdd.TransactionComments;
 
-                    //look to see if the book is in the database - this assumes that no
-                    //two books have the same title
-                    Transaction dbTransaction = db.Transactions.FirstOrDefault(b => b.TransactionID == transactionToAdd.TransactionID);
+                //    //look to see if the book is in the database - this assumes that no
+                //    //two books have the same title
+                //    Transaction dbTransaction = db.Transactions.FirstOrDefault(b => b.TransactionID == transactionToAdd.TransactionID);
 
-                    //if the dbBook is null, this title is not in the database
-                    if (dbTransaction == null)
-                    {
-                        //add the book to the database and save changes
-                        db.Transactions.Add(transactionToAdd);
-                        db.SaveChanges();
+                //    //if the dbBook is null, this title is not in the database
+                //    if (dbTransaction == null)
+                //    {
+                //        //add the book to the database and save changes
+                //        db.Transactions.Add(transactionToAdd);
+                //        db.SaveChanges();
 
-                        //update the counter to help with debugging
-                        intTransactionAdded += 1;
-                    }
-                    else //dbBook is not null - this title *is* in the database
-                    {
-                        //update all of the book's properties
-                        dbTransaction.TransactionNumber = transactionToAdd.TransactionNumber;
-                        dbTransaction.BankAccount = transactionToAdd.BankAccount;
-                        dbTransaction.TransactionType = transactionToAdd.TransactionType;
-                        dbTransaction.ToAccount = transactionToAdd.ToAccount;
-                        dbTransaction.FromAccount = transactionToAdd.FromAccount;
-                        dbTransaction.TransactionAmount = transactionToAdd.TransactionAmount;
-                        dbTransaction.OrderDate = transactionToAdd.OrderDate;
-                        dbTransaction.TransactionApproved = transactionToAdd.TransactionApproved;
-                        dbTransaction.TransactionComments = transactionToAdd.TransactionComments;
+                //        //update the counter to help with debugging
+                //        intTransactionAdded += 1;
+                //    }
+                //    else //dbBook is not null - this title *is* in the database
+                //    {
+                //        //update all of the book's properties
+                //        dbTransaction.TransactionNumber = transactionToAdd.TransactionNumber;
+                //        dbTransaction.BankAccount = transactionToAdd.BankAccount;
+                //        dbTransaction.TransactionType = transactionToAdd.TransactionType;
+                //        dbTransaction.ToAccount = transactionToAdd.ToAccount;
+                //        dbTransaction.FromAccount = transactionToAdd.FromAccount;
+                //        dbTransaction.TransactionAmount = transactionToAdd.TransactionAmount;
+                //        dbTransaction.OrderDate = transactionToAdd.OrderDate;
+                //        dbTransaction.TransactionApproved = transactionToAdd.TransactionApproved;
+                //        dbTransaction.TransactionComments = transactionToAdd.TransactionComments;
 
-                        //update the database and save the changes
-                        db.Update(dbTransaction);
-                        db.SaveChanges();
+                //        //update the database and save the changes
+                //        db.Update(dbTransaction);
+                //        db.SaveChanges();
 
-                        //update the counter to help with debugging
-                        intTransactionAdded += 1;
-                    } //this is the end of the else
-                } //this is the end of the foreach loop for the books
+                //        //update the counter to help with debugging
+                //        intTransactionAdded += 1;
+                //    } //this is the end of the else
+                //} //this is the end of the foreach loop for the books
             //}//this is the end of the try block
 
             //catch (Exception ex)//something went wrong with adding or updating

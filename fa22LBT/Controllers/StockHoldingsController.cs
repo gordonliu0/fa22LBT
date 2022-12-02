@@ -23,11 +23,6 @@ namespace fa22LBT.Controllers
             _userManager = userManager;
         }
 
-        public StockHoldingsController(AppDbContext context)
-        {
-            _context = context;
-        }
-
         // GET: StockHoldings
         public async Task<IActionResult> Index()
         {
@@ -77,14 +72,35 @@ namespace fa22LBT.Controllers
         //}
 
         // GET: StockHoldings/Sell/5
-        public async Task<IActionResult> Sell(int? id)
+        public async Task<IActionResult> Sell(int id)
         {
             if (User.Identity.IsAuthenticated)
             {
+                if (User.IsInRole("Admin"))
+                {
+                    return View("Error", new string[] { "Admins may not sell user stocks" });
+                }
                 AppUser userLoggedIn = await _userManager.FindByNameAsync(User.Identity.Name);
                 if (userLoggedIn.IsActive == false)
                 {
                     return View("Locked");
+                }
+                if (User.Identity.IsAuthenticated)
+                {
+                    var stockPortfolio = await _context.StockPortfolios
+                        .Include(sp => sp.AppUser)
+                        .Include(m => m.StockHoldings)
+                        .ThenInclude(sh => sh.Stock)
+                        .Include(m => m.StockTransactions)
+                        .ThenInclude(st => st.Stock)
+                        .Include(m => m.BankAccount)
+                        .ThenInclude(ba => ba.Transactions)
+                        .FirstOrDefaultAsync(m => m.AppUser.Email == User.Identity.Name);
+
+                    if (stockPortfolio.IsApproved == false)
+                    {
+                        return View("Error", new string[] { "Your Stock Portfolio hasn't been approved yet" });
+                    }
                 }
             }
 
