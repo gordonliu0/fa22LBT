@@ -461,6 +461,11 @@ namespace fa22LBT.Controllers
                 //sign in the user with the new password
                 await _signInManager.SignInAsync(userLoggedIn, isPersistent: false);
 
+                // TODO: emails that the password have changed
+                String emailsubject = "Password Changed";
+                String emailbody = "Your password to Longhorn Bank has been changed.";
+                Utilities.EmailMessaging.SendEmail(userLoggedIn.Email, emailsubject, emailbody);
+
                 //send the user back to the home page
                 return RedirectToAction("Index", "Home");
             }

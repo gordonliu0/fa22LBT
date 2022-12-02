@@ -83,6 +83,7 @@ namespace fa22LBT.Controllers
 
             BankAccount bankAccount = new BankAccount();
             bankAccount.Customer = await _userManager.FindByNameAsync(User.Identity.Name);
+
             return View(bankAccount);
         }
 
@@ -120,6 +121,11 @@ namespace fa22LBT.Controllers
             ModelState.Remove("AccountNo");
             _context.Add(bankAccount);
             await _context.SaveChangesAsync();
+
+            // TODO: sends an email that a customer's bank account has been made
+            String emailbody = "Thank you for creating a(n) " + bankAccount.AccountType + " account with Longhorn Bank!";
+            String emailsubject = "New " + bankAccount.AccountType + " Account";
+            Utilities.EmailMessaging.SendEmail(bankAccount.Customer.Email, emailsubject, emailbody);
 
             return RedirectToAction("InitialDeposit", "Transactions", new { SelectedBankAccount = bankAccount.AccountID});
 

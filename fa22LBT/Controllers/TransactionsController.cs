@@ -198,7 +198,7 @@ namespace fa22LBT.Controllers
             {
                 Transaction dbTransaction = _context.Transactions.Include(o => o.BankAccount).FirstOrDefault(o => o.TransactionID == i);
                 dbTransaction.TransactionApproved = true;
-                BankAccount dbBankAccount = _context.BankAccounts.FirstOrDefault(o => o.AccountID == dbTransaction.BankAccount.AccountID);
+                BankAccount dbBankAccount = _context.BankAccounts.Include(ba => ba.Customer).FirstOrDefault(o => o.AccountID == dbTransaction.BankAccount.AccountID);
                 dbBankAccount.AccountBalance += dbTransaction.TransactionAmount;
                 _context.Update(dbTransaction);
                 _context.Update(dbBankAccount);
@@ -209,6 +209,11 @@ namespace fa22LBT.Controllers
                     _context.Update(dbStockPortfolio);
                 }
                 await _context.SaveChangesAsync();
+
+                // TODO: sends an email that a customer's bank account has been made
+                String emailbody = "Your deposit of $" + dbTransaction.TransactionAmount + " have been approved!";
+                String emailsubject = "Deposit Status Update";
+                Utilities.EmailMessaging.SendEmail(dbBankAccount.Customer.Email, emailsubject, emailbody);
             }
 
             foreach (int i in rejectedDeposits)

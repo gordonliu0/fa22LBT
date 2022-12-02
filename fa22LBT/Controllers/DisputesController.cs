@@ -113,7 +113,7 @@ namespace fa22LBT.Controllers
             // GRAB RELEVANT
             Dispute dbDispute = _context.Disputes.Include(t => t.DisputeTransaction).FirstOrDefault(t => t.DisputeID == disputeID);
             Transaction dbTransaction = _context.Transactions.Include(t => t.BankAccount).FirstOrDefault(t => t.TransactionID == dbDispute.DisputeTransaction.TransactionID);
-            BankAccount dbBankAccount = _context.BankAccounts.FirstOrDefault(t => t.AccountID == dbTransaction.BankAccount.AccountID);
+            BankAccount dbBankAccount = _context.BankAccounts.Include(ba => ba.Customer).FirstOrDefault(t => t.AccountID == dbTransaction.BankAccount.AccountID);
 
             // UPDATE DISPUTE
             if (dispute.DisputeStatus == DisputeStatus.Accepted)
@@ -176,7 +176,13 @@ namespace fa22LBT.Controllers
                 dbDispute.AdminComments = dispute.AdminComments;
                 return View("AdjustDispute", dbDispute);
             }
-            
+
+
+            // TODO: emails that the password have changed
+            String emailsubject = "Dispute Status Update";
+            String emailbody = "Your dispute have been resolved.";
+            Utilities.EmailMessaging.SendEmail(dbBankAccount.Customer.Email, emailsubject, emailbody);
+
             return RedirectToAction("Details", "Transactions", new { id = dbTransaction.TransactionID });
         }
 
@@ -217,6 +223,10 @@ namespace fa22LBT.Controllers
             }
             _context.Update(dbTransaction);
             await _context.SaveChangesAsync();
+
+            String emailsubject = "Dispute Status Update";
+            String emailbody = "Your dispute has been adjusted by " + dbDispute.AdminEmail + ". Your account has been updated accordingly";
+            Utilities.EmailMessaging.SendEmail(dbBankAccount.Customer.Email, emailsubject, emailbody);
 
             return RedirectToAction("Details", "Transactions", new { id = dbTransaction.TransactionID });
         }

@@ -84,5 +84,192 @@ namespace fa22LBT.Controllers
             //this is the happy path - seeding worked!
             return View("Confirm");
         }
+
+        public async Task<IActionResult> SeedAccounts()
+        {
+            try
+            {
+                //call the method to seed the users
+                Seeding.SeedAccounts.SeedAllAccounts(_context);
+            }
+            catch (Exception ex)
+            {
+                //add the error messages to a list of strings
+                List<String> errorList = new List<String>();
+
+                //Add the outer message
+                errorList.Add(ex.Message);
+
+                errorList.Add(ex.InnerException.Message);
+
+                //Add additional inner exception messages, if there are any
+                if (ex.InnerException.InnerException != null)
+                {
+                    errorList.Add(ex.InnerException.InnerException.Message);
+                }
+
+                return View("Error", errorList);
+
+            }
+
+            //this is the happy path - seeding worked!
+            return View("Confirm");
+        }
+
+        public async Task<IActionResult> SeedStockPortfolios()
+        {
+            try
+            {
+                //call the method to seed the users
+                Seeding.SeedStockPortfolios.SeedAllStockPortfolios(_context);
+            }
+            catch (Exception ex)
+            {
+                //add the error messages to a list of strings
+                List<String> errorList = new List<String>();
+
+                //Add the outer message
+                errorList.Add(ex.Message);
+
+                errorList.Add(ex.InnerException.Message);
+
+                //Add additional inner exception messages, if there are any
+                if (ex.InnerException.InnerException != null)
+                {
+                    errorList.Add(ex.InnerException.InnerException.Message);
+                }
+
+                return View("Error", errorList);
+
+            }
+
+            //this is the happy path - seeding worked!
+            return View("Confirm");
+        }
+
+        public async Task<IActionResult> SeedStocks()
+        {
+            try
+            {
+                //call the method to seed the users
+                Seeding.SeedStocks.SeedAllStocks(_context);
+            }
+            catch (Exception ex)
+            {
+                //add the error messages to a list of strings
+                List<String> errorList = new List<String>();
+
+                //Add the outer message
+                errorList.Add(ex.Message);
+
+                errorList.Add(ex.InnerException.Message);
+
+                //Add additional inner exception messages, if there are any
+                if (ex.InnerException.InnerException != null)
+                {
+                    errorList.Add(ex.InnerException.InnerException.Message);
+                }
+
+                return View("Error", errorList);
+
+
+            }
+
+            //this is the happy path - seeding worked!
+            return View("Confirm");
+        }
+
+        public async Task<IActionResult> SeedTransactions()
+        {
+            try
+            {
+                //call the method to seed the users
+                Seeding.SeedTransactions.SeedAllTransactions(_context);
+            }
+            catch (Exception ex)
+            {
+                //add the error messages to a list of strings
+                List<String> errorList = new List<String>();
+
+                //Add the outer message
+                errorList.Add(ex.Message);
+
+                errorList.Add(ex.InnerException.Message);
+
+                //Add additional inner exception messages, if there are any
+                if (ex.InnerException.InnerException != null)
+                {
+                    errorList.Add(ex.InnerException.InnerException.Message);
+                }
+
+                return View("Error", errorList);
+
+            }
+
+            //this is the happy path - seeding worked!
+            return View("Confirm");
+        }
+
+        public async Task<IActionResult> SeedStockTransactions()
+        {
+            try
+            {
+                //call the method to seed the users
+                Seeding.SeedStockTransactions.SeedAllStockTransactions(_context);
+            }
+            catch (Exception ex)
+            {
+                //add the error messages to a list of strings
+                List<String> errorList = new List<String>();
+
+                //Add the outer message
+                errorList.Add(ex.Message);
+
+                errorList.Add(ex.InnerException.Message);
+
+                //Add additional inner exception messages, if there are any
+                if (ex.InnerException.InnerException != null)
+                {
+                    errorList.Add(ex.InnerException.InnerException.Message);
+                }
+
+                return View("Error", errorList);
+
+            }
+
+            //this is the happy path - seeding worked!
+            return View("Confirm");
+        }
+
+        public async Task<IActionResult> SeedDisputes()
+        {
+            try
+            {
+                //call the method to seed the users
+                Seeding.SeedDisputes.SeedAllDisputes(_context);
+            }
+            catch (Exception ex)
+            {
+                //add the error messages to a list of strings
+                List<String> errorList = new List<String>();
+
+                //Add the outer message
+                errorList.Add(ex.Message);
+
+                errorList.Add(ex.InnerException.Message);
+
+                //Add additional inner exception messages, if there are any
+                if (ex.InnerException.InnerException != null)
+                {
+                    errorList.Add(ex.InnerException.InnerException.Message);
+                }
+
+                return View("Error", errorList);
+
+            }
+
+            //this is the happy path - seeding worked!
+            return View("Confirm");
+        }
     }
 }

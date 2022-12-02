@@ -132,6 +132,10 @@ namespace fa22LBT.Controllers
                 {
                     return View("Locked");
                 }
+                if (userLoggedIn.StockPortfolio != null)
+                {
+                    return View("Error", new string[] { "You have already created a StockPortfolio! Please go home." });
+                }
             }
 
             StockPortfolio stockPortfolio = new StockPortfolio();
